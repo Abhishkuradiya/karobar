@@ -30,6 +30,29 @@ class DashboardController extends Controller
                 ->where('payment_method', 'credit')
                 ->sum('balance_due'),
             'customer_count' => $user->customers()->where('business_id', $businessId)->count(),
+            'today_purchases' => $user->purchases()
+                ->where('business_id', $businessId)
+                ->whereDate('purchase_date', $today)
+                ->sum('total'),
+            'today_purchase_count' => $user->purchases()
+                ->where('business_id', $businessId)
+                ->whereDate('purchase_date', $today)
+                ->count(),
+            'supplier_payables' => $user->purchases()
+                ->where('business_id', $businessId)
+                ->sum('balance_due') + $user->expenses()
+                ->where('business_id', $businessId)
+                ->whereNotNull('supplier_id')
+                ->sum('balance_due'),
+            'supplier_count' => $user->suppliers()->where('business_id', $businessId)->count(),
+            'today_expenses' => $user->expenses()
+                ->where('business_id', $businessId)
+                ->whereDate('expense_date', $today)
+                ->sum('total'),
+            'today_expense_count' => $user->expenses()
+                ->where('business_id', $businessId)
+                ->whereDate('expense_date', $today)
+                ->count(),
         ]);
     }
 }

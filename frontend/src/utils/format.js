@@ -26,5 +26,7 @@ export function getErrorMessage(error, fallback = 'Something went wrong. Please 
     if (firstError) return firstError;
   }
 
+  if (error.response?.status >= 500) return fallback;
+
   return error.response?.data?.message || error.message || fallback;
 }

@@ -9,7 +9,24 @@ import Dashboard from './pages/Dashboard';
 import AppLayout from './layouts/AppLayout';
 import SalesPage from './pages/SalesPage';
 import SaleFormPage from './pages/SaleFormPage';
+import PurchasesPage from './pages/PurchasesPage';
+import PurchaseFormPage from './pages/PurchaseFormPage';
 import CustomersPage from './pages/CustomersPage';
+import SuppliersPage from './pages/SuppliersPage';
+import ExpensesPage from './pages/ExpensesPage';
+import ScanBillsPage from './pages/ScanBillsPage';
+import InventoryPage from './pages/InventoryPage';
+import BankingPage from './pages/BankingPage';
+import InvoicesPage from './pages/InvoicesPage';
+import {
+  ActivityPage,
+  CashTallyPage,
+  ChartOfAccountsPage,
+  GstPage,
+  ImportDataPage,
+  JournalPage,
+  MonthEndClosePage,
+} from './pages/AccountingPages';
 import BusinessSetupPage from './pages/BusinessSetupPage';
 import './App.css';
 import './business.css';
@@ -30,6 +47,22 @@ export default function App() {
                 <Route path="/sales/new" element={<SaleFormPage />} />
                 <Route path="/sales/:saleId/edit" element={<SaleFormPage />} />
                 <Route path="/customers" element={<CustomersPage />} />
+                <Route path="/purchases" element={<PurchasesPage />} />
+                <Route path="/purchases/new" element={<PurchaseFormPage />} />
+                <Route path="/purchases/:purchaseId/edit" element={<PurchaseFormPage />} />
+                <Route path="/suppliers" element={<SuppliersPage />} />
+                <Route path="/expenses" element={<ExpensesPage />} />
+                <Route path="/scan-bills" element={<ScanBillsPage />} />
+                <Route path="/inventory" element={<InventoryPage />} />
+                <Route path="/banking" element={<BankingPage />} />
+                <Route path="/invoices" element={<InvoicesPage />} />
+                <Route path="/gst" element={<GstPage />} />
+                <Route path="/cash-tally" element={<CashTallyPage />} />
+                <Route path="/activity" element={<ActivityPage />} />
+                <Route path="/month-end-close" element={<MonthEndClosePage />} />
+                <Route path="/journal" element={<JournalPage />} />
+                <Route path="/chart-of-accounts" element={<ChartOfAccountsPage />} />
+                <Route path="/import-data" element={<ImportDataPage />} />
               </Route>
             </Route>
           </Route>

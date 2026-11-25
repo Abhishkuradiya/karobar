@@ -5,8 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
 use App\Models\JournalEntry;
+use App\Models\Product;
+use App\Models\ReturnNote;
 use App\Models\Sale;
 use App\Models\User;
+use App\Services\InventoryService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -91,6 +94,7 @@ class SaleController extends Controller
                 'business_id' => $businessId,
                 ...$calculated['totals'],
                 'customer_id' => $customer?->id,
+                'bank_account_id' => $validated['bank_account_id'] ?? null,
                 'customer_name_snapshot' => $customer?->name ?? 'Walk-in customer (paid now)',
                 'sale_date' => $validated['sale_date'],
                 'payment_method' => $validated['payment_method'],
@@ -109,6 +113,7 @@ class SaleController extends Controller
                 ),
             ]);
             $sale->items()->createMany($calculated['items']);
+            app(InventoryService::class)->consumeSale($sale);
             $this->postJournal($sale);
 
             return $sale->fresh(['customer', 'items']);
@@ -127,6 +132,7 @@ class SaleController extends Controller
     public function update(Request $request, int $sale): JsonResponse
     {
         $this->ownedSale($request, $sale);
+        $this->assertNoReturnNotes($request->user()->activeBusiness->id, $sale);
         $validated = $request->validate($this->rules($request));
         $calculated = $this->calculate($validated);
         $user = $request->user();
@@ -139,6 +145,7 @@ class SaleController extends Controller
                 ->where('business_id', $businessId)
                 ->lockForUpdate()
                 ->findOrFail($sale);
+            $this->assertNoReturnNotes($businessId, $record->id);
             $customer = $this->lockCustomer($user, $businessId, $validated['customer_id'] ?? null);
             $this->assertCreditLimit(
                 $user,
@@ -150,10 +157,12 @@ class SaleController extends Controller
             );
 
             $this->reverseCurrentJournal($record);
+            app(InventoryService::class)->reverseSale($record);
             $record->items()->delete();
             $record->update([
                 ...$calculated['totals'],
                 'customer_id' => $customer?->id,
+                'bank_account_id' => $validated['bank_account_id'] ?? null,
                 'customer_name_snapshot' => $customer?->name ?? 'Walk-in customer (paid now)',
                 'sale_date' => $validated['sale_date'],
                 'payment_method' => $validated['payment_method'],
@@ -163,6 +172,7 @@ class SaleController extends Controller
                 'due_date' => $this->dueDate($validated['sale_date'], $customer, $validated['payment_method']),
             ]);
             $record->items()->createMany($calculated['items']);
+            app(InventoryService::class)->consumeSale($record);
             $this->postJournal($record);
 
             return $record->fresh(['customer', 'items']);
@@ -181,7 +191,9 @@ class SaleController extends Controller
                 ->where('business_id', $businessId)
                 ->lockForUpdate()
                 ->findOrFail($sale);
+            $this->assertNoReturnNotes($businessId, $record->id);
             $this->reverseCurrentJournal($record);
+            app(InventoryService::class)->reverseSale($record);
             $record->delete();
         }, 3);
 
@@ -201,6 +213,15 @@ class SaleController extends Controller
             ],
             'sale_date' => ['required', 'date_format:Y-m-d'],
             'payment_method' => ['required', Rule::in(self::PAYMENT_METHODS)],
+            'bank_account_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('bank_accounts', 'id')->where(fn (QueryBuilder $query) => $query
+                    ->where('user_id', $request->user()->id)
+                    ->where('business_id', $request->user()->activeBusiness->id)
+                    ->where('is_active', true)
+                    ->whereNull('deleted_at')),
+            ],
             'prices_include_gst' => ['required', 'boolean'],
             'export_under_lut' => ['required', 'boolean'],
             'notes' => ['nullable', 'string', 'max:2000'],
@@ -211,6 +232,14 @@ class SaleController extends Controller
             'items.*.gst_rate' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
             'items.*.discount' => ['required', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
             'items.*.hsn_sac' => ['nullable', 'string', 'max:20'],
+            'items.*.product_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('products', 'id')->where(fn (QueryBuilder $query) => $query
+                    ->where('user_id', $request->user()->id)
+                    ->where('business_id', $request->user()->activeBusiness->id)
+                    ->whereNull('deleted_at')),
+            ],
         ];
     }
 
@@ -259,6 +288,7 @@ class SaleController extends Controller
             $total = round($total + $lineTotal, 2);
 
             $items[] = [
+                'product_id' => $item['product_id'] ?? null,
                 'description' => $item['description'],
                 'quantity' => $quantity,
                 'unit_rate' => $unitRate,
@@ -363,6 +393,15 @@ class SaleController extends Controller
             ->findOrFail($id);
     }
 
+    private function assertNoReturnNotes(int $businessId, int $saleId): void
+    {
+        if (ReturnNote::query()->where('business_id', $businessId)->where('sale_id', $saleId)->exists()) {
+            throw ValidationException::withMessages([
+                'sale' => ['This sale has credit notes and can no longer be edited or voided.'],
+            ]);
+        }
+    }
+
     private function postJournal(Sale $sale): void
     {
         $debitAccount = match ($sale->payment_method) {
@@ -384,6 +423,7 @@ class SaleController extends Controller
 
         $lines = [[
             'account_code' => $debitAccount,
+            'bank_account_id' => $sale->payment_method === 'bank' ? $sale->bank_account_id : null,
             'debit' => $sale->total,
             'credit' => 0,
         ], [
@@ -397,6 +437,19 @@ class SaleController extends Controller
                 'account_code' => 'gst_payable',
                 'debit' => 0,
                 'credit' => $sale->tax_amount,
+            ];
+        }
+        $inventoryCost = (float) $sale->items()->sum('inventory_cost');
+        if ($inventoryCost > 0) {
+            $lines[] = [
+                'account_code' => 'cost_of_goods_sold',
+                'debit' => $inventoryCost,
+                'credit' => 0,
+            ];
+            $lines[] = [
+                'account_code' => 'inventory',
+                'debit' => 0,
+                'credit' => $inventoryCost,
             ];
         }
 
@@ -430,6 +483,7 @@ class SaleController extends Controller
         $reversal->lines()->createMany(
             $original->lines->map(fn ($line): array => [
                 'account_code' => $line->account_code,
+                'bank_account_id' => $line->bank_account_id,
                 'debit' => $line->credit,
                 'credit' => $line->debit,
             ])->all()

@@ -1,6 +1,6 @@
 # KarobarV2 - Sales and Customer Accounting
 
-A full-stack bookkeeping application built with **Laravel 12 (API backend)**, **React + Vite (frontend)**, **MySQL (database)**, and the **Sneat Bootstrap 5 admin theme**. The first operational workflows cover sales, customer credit and balanced journal postings.
+A full-stack bookkeeping application built with **Laravel 12 (API backend)**, **React + Vite (frontend)**, **MySQL (database)**, and the **Sneat Bootstrap 5 admin theme**. The operational workflows cover sales, purchases, customers, suppliers and balanced journal postings.
 
 ---
 
@@ -76,7 +76,7 @@ The frontend sends API requests through Vite's `/api` proxy, so devices use the 
   - Remember Me option.
   - Bearer token authentication via Laravel Sanctum stored in `localStorage`.
 - **Protected Dashboard:**
-  - Shows today's sales, customer receivables, active customers and recent sales for the selected business.
+  - Shows today's sales, purchases and expenses, customer receivables, supplier payables and active customers for the selected business.
 - **Business workspaces:**
   - After login, users with no businesses are guided through the business setup form; users with businesses open their selected business dashboard.
   - Create multiple businesses and switch between them from the dashboard header.
@@ -86,6 +86,10 @@ The frontend sends API requests through Vite's `/api` proxy, so devices use the 
   - Owner-scoped API-backed create, edit, search, list and archive workflows.
   - Shared customer form in the customer page and the new-sale drawer.
   - Credit days, optional credit limit, GSTIN, state, email, mobile and address.
+- **Suppliers:**
+  - Business-scoped create, edit, search, list and archive workflows.
+  - Supplier details include GSTIN, MSME/Udyam registration and credit terms.
+  - Outstanding supplier balances update from credit purchases and unpaid expenses linked to that supplier.
 - **Sales:**
   - API-backed create, list, search, date filters, edit and void workflows.
   - Multiple line items with quantity, rate, discount, GST percentage and HSN/SAC.
@@ -93,8 +97,23 @@ The frontend sends API requests through Vite's `/api` proxy, so devices use the 
   - Sale totals are recalculated and validated by the backend; the browser's totals are only a preview.
   - Each saved sale posts a balanced journal entry. Editing or voiding a sale writes a reversing entry before changing the books.
   - Customer credit limits are checked before a credit sale is committed.
+- **Purchases:**
+  - Business-scoped create, list, date filter, edit and void workflows.
+  - Multiple line items with quantity, rate, discount, GST percentage and HSN/SAC.
+  - Cash, UPI, card, bank and supplier-credit payment methods.
+  - Supports GST-inclusive pricing, input tax credit and reverse charge.
+  - Purchase totals are recalculated by the backend. Editing or voiding a purchase reverses the prior journal before updating the books.
+- **Expenses:**
+  - Business-scoped create, list, search, date filter, edit and delete workflows.
+  - Common expense categories, supplier association, cash/UPI/bank/card payments or unpaid status.
+  - GST is calculated by the API; input tax credit is recorded separately when marked eligible.
+  - Saved expenses post balanced journal entries. Editing or deleting an expense reverses its previous entry.
+- **Scan bills:**
+  - Capture an image from a device camera or upload a JPEG, PNG or PDF up to 10 MB.
+  - Bill files are stored privately on the application server and can be previewed, attached to an expense, or deleted.
+  - Expense details are manually reviewed before posting. Automatic OCR is not configured, and bill files are not sent to an external AI provider.
 
-### Sales and customer API
+### Accounting API
 
 These endpoints require a Sanctum bearer token:
 
@@ -104,10 +123,22 @@ These endpoints require a Sanctum bearer token:
 | `PATCH` | `/api/businesses/active` | Select one of the authenticated user's businesses |
 | `GET`, `POST` | `/api/customers` | List/search or create customers |
 | `GET`, `PUT`, `DELETE` | `/api/customers/{id}` | View, update or archive a customer |
+| `GET`, `POST` | `/api/suppliers` | List/search or create suppliers |
+| `GET`, `PUT`, `DELETE` | `/api/suppliers/{id}` | View, update or soft-delete a supplier; past purchase history is retained |
 | `GET`, `POST` | `/api/sales` | List/filter or record sales |
 | `GET`, `PUT`, `DELETE` | `/api/sales/{id}` | View, edit or void a sale |
+| `GET`, `POST` | `/api/purchases` | List/filter or record purchases |
+| `GET`, `PUT`, `DELETE` | `/api/purchases/{id}` | View, edit or void a purchase |
+| `GET`, `POST` | `/api/expenses` | List/filter or record expenses |
+| `GET`, `PUT`, `DELETE` | `/api/expenses/{id}` | View, edit or delete an expense |
+| `GET`, `POST` | `/api/scan-bills` | List privately stored bill files or upload a bill |
+| `GET` | `/api/scan-bills/{id}` | View a bill record |
+| `GET` | `/api/scan-bills/{id}/file` | Preview a private bill file |
+| `DELETE` | `/api/scan-bills/{id}` | Delete an uploaded bill file |
 | `GET` | `/api/dashboard/summary` | Dashboard totals |
 
-Customer, sales and dashboard endpoints require an active business. Business selection is validated against the authenticated user; records from another business are not returned or editable.
+Customer, supplier, sales, purchase, expense, scanned bill and dashboard endpoints require an active business. Business selection is validated against the authenticated user; records from another business are not returned or editable. Bill-file responses require authentication and business ownership.
 
-`DELETE` on a customer archives it, preserving historical sale references. `DELETE` on a sale voids it and creates a journal reversal; it does not erase the accounting history. Sale journal entries debit the selected payment/receivable account and credit sales revenue and GST payable.
+`DELETE` on a customer or supplier archives it, preserving historical transaction references. `DELETE` on a sale, purchase or expense reverses its journal entry and preserves the accounting history. Purchase postings handle input GST credit and reverse-charge liability separately.
+
+Expense requests use `category`, `amount`, `gst_rate` (`0`, `5`, `12`, `18` or `28`), `claim_input_tax_credit`, `payment_method` (`cash`, `upi`, `bank`, `card` or `unpaid`), and `expense_date`. Optional fields are `supplier_id`, `scan_bill_id` and `note`. The API returns the calculated `tax_amount`, `total`, `amount_paid`, `balance_due` and current journal entry reference; clients should not use browser-calculated totals as accounting data. Upload a bill as `multipart/form-data` using the `file` field; accepted types are JPEG, PNG and PDF, up to 10 MB.

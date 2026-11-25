@@ -1,0 +1,499 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 22 0 R] /Count 9 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+6 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 7 0 R >>
+endobj
+7 0 obj
+<< /Length 3978 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 25 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 700 Tm (Expenses, Suppliers) Tj ET
+BT /F2 25 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 671 Tm (& Purchases API) Tj ET
+BT /F1 9.5 Tf 0.42 0.42 0.51 rg 1 0 0 1 54 646 Tm (Endpoint reference  |  Karobar  |  25 November 2026) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 615 Tm (Base URL) Tj ET
+q 0.965 0.965 0.980 rg 54 577.5 504 25.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 577.5 504 25.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 590 Tm (http://192.168.1.71:8000/api) Tj ET
+BT /F1 9.2 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 569.5 Tm (Use this address from a device on the same local network. If the computer IP changes,) Tj ET
+BT /F1 9.2 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 556.5 Tm (replace 192.168.1.71 with its current LAN IP. In local development, the API is also) Tj ET
+BT /F1 9.2 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 543.5 Tm (available at http://127.0.0.1:8000/api on the host computer.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 522.5 Tm (Authentication and headers) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 506.5 Tm (All endpoints in this guide require an authenticated user and an active business. Send the) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 493.5 Tm (Bearer token returned by login or registration. All examples use JSON except bill uploads.) Tj ET
+q 0.965 0.965 0.980 rg 54 432 504 48.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 432 504 48.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 467.5 Tm (Authorization: Bearer <token>) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 456 Tm (Accept: application/json) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 444.5 Tm (Content-Type: application/json) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 424 Tm (Send JSON request bodies for create and update operations. Use a full request body with PUT) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 411 Tm (for updates. IDs and records are restricted to the authenticated user's currently active) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 398 Tm (business.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 381 Tm (Endpoint overview) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 365 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 365 Tm (/suppliers) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 353 Tm (List suppliers; supports search and pagination.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 337 Tm (POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 337 Tm (/suppliers) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 325 Tm (Create a supplier.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 309 Tm (GET / PUT / DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 309 Tm (/suppliers/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 297 Tm (View, update or soft-delete a supplier.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 281 Tm (GET / POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 281 Tm (/purchases) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 269 Tm (List/filter purchases or create a purchase.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 253 Tm (GET / PUT / DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 253 Tm (/purchases/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 241 Tm (View, update or void a purchase.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 225 Tm (GET / POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 225 Tm (/expenses) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 213 Tm (List/filter expenses or create an expense.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 197 Tm (GET / PUT / DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 197 Tm (/expenses/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 185 Tm (View, update or delete an expense.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  1 / 9) Tj ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 9 0 R >>
+endobj
+9 0 obj
+<< /Length 4943 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (1. Suppliers) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Supplier records are scoped to the active business. GSTIN is optional, but when supplied) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (it must be a valid 15-character GSTIN and unique among active suppliers in that business.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (List and search) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 626 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 626 Tm (/api/suppliers?search=sharma&page=1&per_page=15) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 614 Tm (Search matches supplier name, mobile, GSTIN, email and Udyam number. per_page) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 603 Tm (defaults to 15 and is limited to 1-50.) Tj ET
+q 0.965 0.965 0.980 rg 54 416 504 175 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 416 504 175 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 578 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 566.5 Tm (  "data": [{) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 555 Tm (    "id": 4, "user_id": 1, "business_id": 2,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 543.5 Tm (    "name": "Sharma Traders", "mobile": "9876543210",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 532 Tm (    "credit_days": 30, "msme_type": "not_known",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 520.5 Tm (    "udyam_number": null, "gstin": null, "state": "Maharashtra",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 509 Tm (    "email": "orders@example.com", "address": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 497.5 Tm (    "purchase_balance_due": "224.20",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 486 Tm (    "expense_balance_due": "0.00", "purchases_count": 1,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 474.5 Tm (    "outstanding_balance": 224.2) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 463 Tm (  }],) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 451.5 Tm (  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 },) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 440 Tm (  "summary": { "count": 1, "outstanding": 224.2 }) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 428.5 Tm (}) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 408 Tm (Create supplier) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 392 Tm (POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 392 Tm (/api/suppliers) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 380 Tm (Returns 201 Created. name, credit_days and msme_type are required.) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 364 Tm (Request JSON) Tj ET
+q 0.965 0.965 0.980 rg 54 213.5 504 140.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 213.5 504 140.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 341 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 329.5 Tm (  "name": "Sharma Traders",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 318 Tm (  "mobile": "9876543210",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 306.5 Tm (  "credit_days": 30,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 295 Tm (  "msme_type": "not_known",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 283.5 Tm (  "udyam_number": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 272 Tm (  "gstin": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 260.5 Tm (  "state": "Maharashtra",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 249 Tm (  "email": "orders@example.com",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 237.5 Tm (  "address": "Pune, Maharashtra") Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 226 Tm (}) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 205.5 Tm (Fields and rules) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 191.5 Tm (- name: required string, maximum 150 characters.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 176.5 Tm (- mobile: optional phone characters, 7-30 characters.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 161.5 Tm (- credit_days: required integer, 0-3650; micro and small MSME credit terms are capped at) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 148.5 Tm (45 days.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 133.5 Tm (- msme_type: required; one of not_known, micro, small or medium.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 118.5 Tm (- udyam_number: optional; if supplied, must match UDYAM-XX-00-0000000 format.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 103.5 Tm (- gstin: optional; valid 15-character GSTIN and unique within this active business.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 88.5 Tm (- state, email and address are optional; email must be valid when supplied.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  2 / 9) Tj ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 11 0 R >>
+endobj
+11 0 obj
+<< /Length 3702 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (Supplier API \(continued\)) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Create, view and update return the supplier record with purchase and expense balance) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (aggregates. The supplier list summary includes the count of active suppliers and) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 654 Tm (outstanding total.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 629 Tm (Create response - 201 Created) Tj ET
+q 0.965 0.965 0.980 rg 54 476.5 504 140.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 476.5 504 140.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 604 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 592.5 Tm (  "id": 4, "user_id": 1, "business_id": 2,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 581 Tm (  "name": "Sharma Traders", "mobile": "9876543210",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 569.5 Tm (  "credit_days": 30, "msme_type": "not_known",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 558 Tm (  "udyam_number": null, "gstin": null, "state": "Maharashtra",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 546.5 Tm (  "email": "orders@example.com", "address": "Pune, Maharashtra",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 535 Tm (  "purchase_balance_due": null, "expense_balance_due": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 523.5 Tm (  "purchases_count": 0, "outstanding_balance": 0,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 512 Tm (  "created_at": "2026-11-25T10:00:00.000000Z",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 500.5 Tm (  "updated_at": "2026-11-25T10:00:00.000000Z") Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 489 Tm (}) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 468.5 Tm (View, update and delete) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 452.5 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 452.5 Tm (/api/suppliers/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 440.5 Tm (Returns 200 OK with the supplier and balance aggregates.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 424.5 Tm (PUT) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 424.5 Tm (/api/suppliers/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 412.5 Tm (Returns 200 OK. Send name, credit_days and msme_type; optional fields can be) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 401.5 Tm (set to null.) Tj ET
+BT /F2 8 Tf 0.7 0.22 0.25 rg 1 0 0 1 57 385.5 Tm (DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 385.5 Tm (/api/suppliers/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 373.5 Tm (Returns 204 No Content. Soft-deletes the supplier; historical purchases retain) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 362.5 Tm (their supplier snapshot.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 346.5 Tm (Supplier errors) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 330.5 Tm (- 422: missing/invalid required fields, invalid GSTIN/Udyam number, duplicate active) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 317.5 Tm (GSTIN, or micro/small credit_days above 45.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 302.5 Tm (- 404: the supplier does not exist in the active business \(including another user's) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 289.5 Tm (supplier\).) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 274.5 Tm (- 401: missing or invalid Bearer token. 409: no active business selected.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  3 / 9) Tj ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 13 0 R >>
+endobj
+13 0 obj
+<< /Length 4062 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (2. Purchases) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Purchases record supplier bills and post their accounting entries. The API calculates all) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (totals from line items; do not submit or rely on client-calculated totals.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (Create a purchase) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 626 Tm (POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 626 Tm (/api/purchases) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 614 Tm (Returns 201 Created with the purchase, related supplier and calculated items.) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 598 Tm (Request JSON) Tj ET
+q 0.965 0.965 0.980 rg 54 355.5 504 232.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 355.5 504 232.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 575 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 563.5 Tm (  "supplier_id": 4,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 552 Tm (  "purchase_date": "2026-11-25",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 540.5 Tm (  "supplier_bill_number": "BILL-881",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 529 Tm (  "supplier_bill_date": "2026-11-25",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 517.5 Tm (  "payment_method": "credit",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 506 Tm (  "prices_include_gst": false,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 494.5 Tm (  "claim_input_tax_credit": true,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 483 Tm (  "reverse_charge": false,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 471.5 Tm (  "notes": "Stock for November",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 460 Tm (  "items": [{) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 448.5 Tm (    "description": "Basmati rice 25kg",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 437 Tm (    "quantity": 2,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 425.5 Tm (    "unit_rate": 100,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 414 Tm (    "gst_rate": 18,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 402.5 Tm (    "discount": 10,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 391 Tm (    "hsn_sac": "1006") Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 379.5 Tm (  }]) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 368 Tm (}) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 347.5 Tm (Fields and rules) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 333.5 Tm (- supplier_id: optional integer, but required when payment_method is credit; supplier) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 320.5 Tm (must be active in this business.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 305.5 Tm (- purchase_date: required YYYY-MM-DD. supplier_bill_date is optional YYYY-MM-DD.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 290.5 Tm (- payment_method: required; cash, upi, card, bank or credit.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 275.5 Tm (- prices_include_gst, claim_input_tax_credit and reverse_charge: required booleans.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 260.5 Tm (- supplier_bill_number: optional, max 60 characters; unique per business/supplier when) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 247.5 Tm (provided.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 232.5 Tm (- items: required array of 1-50 items. Each requires description, quantity, unit_rate,) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 219.5 Tm (gst_rate and discount; hsn_sac is optional.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 204.5 Tm (- quantity must be greater than zero with up to 3 decimals; rate and discount use up to 2) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 191.5 Tm (decimals; GST rate is 0-100.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  4 / 9) Tj ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 15 0 R >>
+endobj
+15 0 obj
+<< /Length 4393 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (Purchase API \(continued\)) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Line totals are rounded to two decimals. For GST-exclusive items, taxable amount is) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (quantity x rate less discount, and tax is calculated on that amount. GST-inclusive prices) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 654 Tm (are split into taxable amount and GST.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 629 Tm (Example create response - 201 Created) Tj ET
+q 0.965 0.965 0.980 rg 54 361.5 504 255.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 361.5 504 255.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 604 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 592.5 Tm (  "id": 12, "user_id": 1, "business_id": 2,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 581 Tm (  "supplier_id": 4, "purchase_number": "PUR-20261125-000012",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 569.5 Tm (  "supplier_bill_number": "BILL-881",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 558 Tm (  "supplier_name_snapshot": "Sharma Traders",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 546.5 Tm (  "purchase_date": "2026-11-25", "supplier_bill_date": "2026-11-25",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 535 Tm (  "payment_method": "credit", "prices_include_gst": false,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 523.5 Tm (  "claim_input_tax_credit": true, "reverse_charge": false,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 512 Tm (  "subtotal": "200.00", "discount_total": "10.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 500.5 Tm (  "taxable_amount": "190.00", "tax_amount": "34.20",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 489 Tm (  "total": "224.20", "supplier_amount": "224.20",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 477.5 Tm (  "amount_paid": "0.00", "balance_due": "224.20",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 466 Tm (  "due_date": "2026-12-25", "current_journal_entry_id": 45,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 454.5 Tm (  "supplier": { "id": 4, "name": "Sharma Traders" },) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 443 Tm (  "items": [{) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 431.5 Tm (    "id": 18, "purchase_id": 12, "description": "Basmati rice 25kg",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 420 Tm (    "quantity": "2.000", "unit_rate": "100.00", "gst_rate": "18.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 408.5 Tm (    "discount": "10.00", "hsn_sac": "1006",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 397 Tm (    "taxable_amount": "190.00", "tax_amount": "34.20", "line_total": "224.20") Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 385.5 Tm (  }]) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 374 Tm (}) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 353.5 Tm (The due_date above assumes the supplier has 30 credit days. A paid purchase has) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 340.5 Tm (amount_paid equal to supplier_amount and balance_due of 0. A credit purchase starts) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 327.5 Tm (unpaid. Response records also include created_at and updated_at timestamps.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 310.5 Tm (GST and reverse charge) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 294.5 Tm (- When prices_include_gst is true, the supplied item rate is treated as GST-inclusive.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 279.5 Tm (- reverse_charge=true requires prices_include_gst=false. Reverse-charge tax is posted as) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 266.5 Tm (a separate payable.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 251.5 Tm (- claim_input_tax_credit controls whether purchase GST is posted to input_gst or included) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 238.5 Tm (in purchase expense.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 223.5 Tm (- With reverse charge, supplier_amount excludes reverse-charge tax; total still includes) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 210.5 Tm (the tax.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  5 / 9) Tj ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 17 0 R >>
+endobj
+17 0 obj
+<< /Length 4031 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (Purchase API \(continued\)) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Purchase list totals and filters include only purchases in the requested date) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (range/search. The API returns pagination metadata and a summary for the current filter.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (List, filter and search) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 626 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 626 Tm (/api/purchases?from=2026-11-01&to=2026-11-30&page=1&per_page=15&search=BILL) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 614 Tm (All query parameters are optional. Date format is YYYY-MM-DD; search covers) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 603 Tm (purchase number, supplier bill number/name and item description.) Tj ET
+q 0.965 0.965 0.980 rg 54 485 504 106 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 485 504 106 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 578 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 566.5 Tm (  "data": [ { "id": 12, "purchase_number": "PUR-20261125-000012",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 555 Tm (    "purchase_date": "2026-11-25", "supplier_name_snapshot": "Sharma Traders",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 543.5 Tm (    "payment_method": "credit", "total": "224.20", "balance_due": "224.20",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 532 Tm (    "supplier": { "id": 4, "name": "Sharma Traders" }, "items": [ ... ] } ],) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 520.5 Tm (  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 },) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 509 Tm (  "summary": { "count": 1, "total": 224.2, "outstanding": 224.2 }) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 497.5 Tm (}) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 477 Tm (The abbreviated list item above omits other purchase columns and item fields. Full records) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 464 Tm (are returned by GET /api/purchases/{id}. per_page defaults to 15 \(maximum 50\).) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 447 Tm (View, update and void) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 431 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 431 Tm (/api/purchases/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 419 Tm (Returns 200 OK with supplier and items.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 403 Tm (PUT) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 403 Tm (/api/purchases/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 391 Tm (Returns 200 OK. Submit the full create body; totals and due date are) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 380 Tm (recalculated.) Tj ET
+BT /F2 8 Tf 0.7 0.22 0.25 rg 1 0 0 1 57 364 Tm (DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 364 Tm (/api/purchases/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 352 Tm (Returns 204 No Content. Voids the purchase and adds a reversing journal entry;) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 341 Tm (accounting history is retained.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 325 Tm (Purchase errors) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 309 Tm (- 422: validation errors; for example, credit requires supplier_id, discount cannot) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 296 Tm (exceed item gross, and RCM cannot use GST-inclusive prices.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 281 Tm (- 422: duplicate supplier bill number for the same supplier and business.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 266 Tm (- 404: purchase or supplier is outside the active business or does not exist.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  6 / 9) Tj ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 19 0 R >>
+endobj
+19 0 obj
+<< /Length 3366 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (3. Expenses) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Expenses record everyday operating costs. The API calculates GST and posts a balanced) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (journal entry. For an unpaid expense, the total is posted to accounts payable.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (Create an expense) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 626 Tm (POST) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 626 Tm (/api/expenses) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 614 Tm (Returns 201 Created with the expense, supplier \(if selected\) and scan bill \(if) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 603 Tm (attached\).) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 587 Tm (Request JSON) Tj ET
+q 0.965 0.965 0.980 rg 54 436.5 504 140.5 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 436.5 504 140.5 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 564 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 552.5 Tm (  "category": "rent",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 541 Tm (  "amount": 1000,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 529.5 Tm (  "gst_rate": 18,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 518 Tm (  "claim_input_tax_credit": true,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 506.5 Tm (  "payment_method": "bank",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 495 Tm (  "expense_date": "2026-11-25",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 483.5 Tm (  "supplier_id": 4,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 472 Tm (  "scan_bill_id": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 460.5 Tm (  "note": "November shop rent") Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 449 Tm (}) Tj ET
+BT /F2 9.5 Tf 0.22 0.22 0.33 rg 1 0 0 1 54 428.5 Tm (Fields and allowed values) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 414.5 Tm (- category: required; rent, electricity, salary, fuel, transport, internet,) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 401.5 Tm (office_expenses, repairs, advertising, travel, bank_charges, miscellaneous, insurance,) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 388.5 Tm (telephone, maintenance, professional_fees, packaging, taxes_licenses or other.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 373.5 Tm (- amount: required positive amount with up to 2 decimals. GST rate: 0, 5, 12, 18 or 28.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 358.5 Tm (- claim_input_tax_credit: required boolean. It cannot be true when gst_rate is 0.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 343.5 Tm (- payment_method: cash, upi, bank, card or unpaid. unpaid records the full total as) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 330.5 Tm (balance_due.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 315.5 Tm (- expense_date: required YYYY-MM-DD. supplier_id and scan_bill_id are optional and) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 302.5 Tm (business-scoped.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 287.5 Tm (- note is optional \(maximum 2000 characters\).) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  7 / 9) Tj ET
+endstream
+endobj
+20 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 21 0 R >>
+endobj
+21 0 obj
+<< /Length 3925 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (Expense API \(continued\)) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Expenses return calculated accounting values. For this example, 18% GST on Rs. 1,000 is) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (Rs. 180, making the total Rs. 1,180.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (Example create response - 201 Created) Tj ET
+q 0.965 0.965 0.980 rg 54 455 504 175 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 455 504 175 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 617 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 605.5 Tm (  "id": 8, "user_id": 1, "business_id": 2,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 594 Tm (  "supplier_id": 4, "scan_bill_id": null,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 582.5 Tm (  "expense_number": "EXP-20261125-000008",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 571 Tm (  "category": "rent", "supplier_name_snapshot": "Sharma Traders",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 559.5 Tm (  "expense_date": "2026-11-25", "payment_method": "bank",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 548 Tm (  "amount": "1000.00", "gst_rate": "18.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 536.5 Tm (  "claim_input_tax_credit": true, "tax_amount": "180.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 525 Tm (  "total": "1180.00", "amount_paid": "1180.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 513.5 Tm (  "balance_due": "0.00", "note": "November shop rent",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 502 Tm (  "current_journal_entry_id": 72,) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 490.5 Tm (  "supplier": { "id": 4, "name": "Sharma Traders" },) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 479 Tm (  "scan_bill": null) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 467.5 Tm (}) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 447 Tm (If claim_input_tax_credit is false, GST is included in the expense account. For eligible) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 434 Tm (credit, expense amount and input GST are posted separately. created_at and updated_at are) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 421 Tm (also returned.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 404 Tm (List, filter and search) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 388 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 388 Tm (/api/expenses?from=2026-11-01&to=2026-11-30&page=1&per_page=15&search=rent) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 376 Tm (Search matches expense number, category, note and supplier snapshot. Date) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 365 Tm (filters and pagination work like purchases.) Tj ET
+q 0.965 0.965 0.980 rg 54 247 504 106 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 247 504 106 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 340 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 328.5 Tm (  "data": [ { "id": 8, "expense_number": "EXP-20261125-000008",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 317 Tm (    "category": "rent", "expense_date": "2026-11-25",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 305.5 Tm (    "total": "1180.00", "balance_due": "0.00",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 294 Tm (    "supplier": { "id": 4, "name": "Sharma Traders" }, "scan_bill": null } ],) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 282.5 Tm (  "meta": { "current_page": 1, "last_page": 1, "per_page": 15, "total": 1 },) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 271 Tm (  "summary": { "count": 1, "total": 1180, "outstanding": 0 }) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 259.5 Tm (}) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  8 / 9) Tj ET
+endstream
+endobj
+22 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R /F2 4 0 R /F3 5 0 R >> >> /Contents 23 0 R >>
+endobj
+23 0 obj
+<< /Length 3632 >>
+stream
+BT /F2 8 Tf 0.33 0.29 0.83 rg 1 0 0 1 54 766 Tm (KAROBAR  /  ACCOUNTING API) Tj ET
+0.84 0.84 0.89 RG 0.7 w 54 754 m 558 754 l S
+BT /F2 23 Tf 0.17 0.16 0.31 rg 1 0 0 1 54 705 Tm (Expense API \(continued\)) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 680 Tm (Expense update and delete operations preserve double-entry history by reversing the) Tj ET
+BT /F1 10 Tf 0.39 0.39 0.49 rg 1 0 0 1 54 667 Tm (previous journal entry before changing or removing the expense.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 642 Tm (View, update and delete) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 626 Tm (GET) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 626 Tm (/api/expenses/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 614 Tm (Returns 200 OK with supplier and linked scan-bill details.) Tj ET
+BT /F2 8 Tf 0.27 0.31 0.68 rg 1 0 0 1 57 598 Tm (PUT) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 598 Tm (/api/expenses/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 586 Tm (Returns 200 OK. Submit the full create body; computed totals are recalculated.) Tj ET
+BT /F2 8 Tf 0.7 0.22 0.25 rg 1 0 0 1 57 570 Tm (DELETE) Tj ET
+BT /F3 8.5 Tf 0.17 0.18 0.25 rg 1 0 0 1 120 570 Tm (/api/expenses/{id}) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 558 Tm (Returns 204 No Content. Soft-deletes the expense and creates a journal) Tj ET
+BT /F1 8.5 Tf 0.37 0.37 0.46 rg 1 0 0 1 124 547 Tm (reversal. A linked bill returns to needs_review.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 531 Tm (Scan-bill IDs) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 515 Tm (A scan_bill_id can refer to an uploaded bill with status needs_review in the same active) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 502 Tm (business. Saving the expense marks the bill recorded. The bill upload endpoints are) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 489 Tm (documented separately in the application README.) Tj ET
+BT /F2 11 Tf 0.31 0.28 0.67 rg 1 0 0 1 54 472 Tm (Common errors and behavior) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 456 Tm (- 401 Unauthorized: Bearer token is missing or invalid.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 441 Tm (- 409 Conflict: the account has no active business selected.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 426 Tm (- 404 Not Found: the record does not exist or is outside the authenticated user's active) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 413 Tm (business.) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 398 Tm (- 422 Unprocessable Content: field validation failed. Laravel returns a message and) Tj ET
+BT /F1 9.5 Tf 0.17 0.17 0.25 rg 1 0 0 1 62 385 Tm (field-specific errors.) Tj ET
+q 0.965 0.965 0.980 rg 54 314 504 60 re f Q
+q 0.83 0.82 0.91 RG 0.5 w 54 314 504 60 re S Q
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 361 Tm ({) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 349.5 Tm (  "message": "The category field is required.",) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 338 Tm (  "errors": { "category": [ "The category field is required." ] }) Tj ET
+BT /F3 8.2 Tf 0.19 0.2 0.29 rg 1 0 0 1 64 326.5 Tm (}) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 306 Tm (Successful reads and updates return 200 OK; creates return 201 Created; deletes return 204) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 293 Tm (No Content with an empty body. Never treat a successful HTTP status as proof that) Tj ET
+BT /F1 9 Tf 0.17 0.17 0.25 rg 1 0 0 1 54 280 Tm (client-submitted totals were used: monetary totals are calculated by the API.) Tj ET
+BT /F1 8 Tf 0.46 0.46 0.54 rg 1 0 0 1 54 31 Tm (Karobar API Reference  |  9 / 9) Tj ET
+endstream
+endobj
+xref
+0 24
+0000000000 65535 f 
+0000000015 00000 n 
+0000000064 00000 n 
+0000000176 00000 n 
+0000000246 00000 n 
+0000000321 00000 n 
+0000000389 00000 n 
+0000000535 00000 n 
+0000004565 00000 n 
+0000004711 00000 n 
+0000009706 00000 n 
+0000009854 00000 n 
+0000013609 00000 n 
+0000013757 00000 n 
+0000017872 00000 n 
+0000018020 00000 n 
+0000022466 00000 n 
+0000022614 00000 n 
+0000026698 00000 n 
+0000026846 00000 n 
+0000030265 00000 n 
+0000030413 00000 n 
+0000034391 00000 n 
+0000034539 00000 n 
+trailer
+<< /Size 24 /Root 1 0 R >>
+startxref
+38224
+%%EOF

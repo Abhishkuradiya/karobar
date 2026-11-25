@@ -51,7 +51,7 @@ function DashboardContent() {
         <div>
           <span className="eyebrow">YOUR BUSINESS AT A GLANCE</span>
           <h1>Dashboard</h1>
-          <p>Every sale recorded. Every balance accounted for.</p>
+          <p>Every sale and purchase recorded. Every balance accounted for.</p>
         </div>
         <Link className="btn btn-primary" to="/sales/new"><i className="bx bx-plus me-1" /> Record a sale</Link>
       </div>
@@ -73,6 +73,26 @@ function DashboardContent() {
           <span className="summary-icon summary-icon-green"><i className="bx bx-group" /></span>
           <div><small>Active customers</small><strong>{loading ? '—' : summary?.customer_count ?? 0}</strong></div>
           <span className="summary-footnote">Your customer register</span>
+        </article>
+        <article className="summary-card">
+          <span className="summary-icon summary-icon-blue"><i className="bx bx-cart" /></span>
+          <div><small>Today&apos;s purchases</small><strong>{loading ? '—' : formatMoney(summary?.today_purchases)}</strong></div>
+          <span className="summary-footnote">{loading ? 'Loading…' : `${summary?.today_purchase_count ?? 0} recorded today`}</span>
+        </article>
+        <article className="summary-card">
+          <span className="summary-icon summary-icon-violet"><i className="bx bx-receipt" /></span>
+          <div><small>Today&apos;s expenses</small><strong>{loading ? '—' : formatMoney(summary?.today_expenses)}</strong></div>
+          <span className="summary-footnote">{loading ? 'Loading…' : `${summary?.today_expense_count ?? 0} recorded today`}</span>
+        </article>
+        <article className="summary-card">
+          <span className="summary-icon summary-icon-amber"><i className="bx bx-wallet" /></span>
+          <div><small>Supplier payables</small><strong>{loading ? '—' : formatMoney(summary?.supplier_payables)}</strong></div>
+          <span className="summary-footnote">Outstanding credit purchases</span>
+        </article>
+        <article className="summary-card">
+          <span className="summary-icon summary-icon-green"><i className="bx bx-package" /></span>
+          <div><small>Active suppliers</small><strong>{loading ? '—' : summary?.supplier_count ?? 0}</strong></div>
+          <span className="summary-footnote">Your supplier register</span>
         </article>
       </div>
 
@@ -124,7 +144,27 @@ function DashboardContent() {
             <span><strong>Add a customer</strong><small>Save their contact and terms</small></span>
             <i className="bx bx-chevron-right" />
           </Link>
-          <div className="books-note"><i className="bx bx-check-shield" /> Every saved sale creates balanced journal entries.</div>
+          <Link to="/purchases/new" className="quick-action-link">
+            <span className="quick-action-icon"><i className="bx bx-cart-add" /></span>
+            <span><strong>Record a purchase</strong><small>Supplier bill, GST and payment</small></span>
+            <i className="bx bx-chevron-right" />
+          </Link>
+          <Link to="/expenses" className="quick-action-link">
+            <span className="quick-action-icon quick-action-icon-blue"><i className="bx bx-receipt" /></span>
+            <span><strong>Record an expense</strong><small>Capture day-to-day business costs</small></span>
+            <i className="bx bx-chevron-right" />
+          </Link>
+          <Link to="/scan-bills" className="quick-action-link">
+            <span className="quick-action-icon"><i className="bx bx-scan" /></span>
+            <span><strong>Scan a bill</strong><small>Upload and review bill documents</small></span>
+            <i className="bx bx-chevron-right" />
+          </Link>
+          <Link to="/suppliers" className="quick-action-link">
+            <span className="quick-action-icon quick-action-icon-blue"><i className="bx bx-truck" /></span>
+            <span><strong>Manage suppliers</strong><small>Review contact details and balances</small></span>
+            <i className="bx bx-chevron-right" />
+          </Link>
+          <div className="books-note"><i className="bx bx-check-shield" /> Every saved sale, purchase and expense creates balanced journal entries.</div>
         </aside>
       </div>
     </section>

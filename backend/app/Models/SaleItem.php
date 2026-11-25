@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class SaleItem extends Model
 {
     protected $fillable = [
+        'product_id',
         'description',
         'quantity',
         'unit_rate',
@@ -17,6 +18,7 @@ class SaleItem extends Model
         'taxable_amount',
         'tax_amount',
         'line_total',
+        'inventory_cost',
     ];
 
     protected function casts(): array
@@ -29,11 +31,17 @@ class SaleItem extends Model
             'taxable_amount' => 'decimal:2',
             'tax_amount' => 'decimal:2',
             'line_total' => 'decimal:2',
+            'inventory_cost' => 'decimal:2',
         ];
     }
 
     public function sale(): BelongsTo
     {
         return $this->belongsTo(Sale::class);
+    }
+
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class)->withTrashed();
     }
 }

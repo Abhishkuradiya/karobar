@@ -34,6 +34,26 @@ class Business extends Model
         return $this->hasMany(Sale::class);
     }
 
+    public function suppliers(): HasMany
+    {
+        return $this->hasMany(Supplier::class);
+    }
+
+    public function purchases(): HasMany
+    {
+        return $this->hasMany(Purchase::class);
+    }
+
+    public function expenses(): HasMany
+    {
+        return $this->hasMany(Expense::class);
+    }
+
+    public function scanBills(): HasMany
+    {
+        return $this->hasMany(ScanBill::class);
+    }
+
     public function journalEntries(): HasMany
     {
         return $this->hasMany(JournalEntry::class);

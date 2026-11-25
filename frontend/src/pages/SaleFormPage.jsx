@@ -13,6 +13,7 @@ const paymentMethods = [
 ];
 
 const makeEmptyItem = () => ({
+  product_id: '',
   description: '',
   quantity: '1',
   unit_rate: '',
@@ -57,10 +58,12 @@ function toFormSale(sale) {
     customer_id: sale.customer_id ? String(sale.customer_id) : '',
     sale_date: sale.sale_date,
     payment_method: sale.payment_method,
+    bank_account_id: sale.bank_account_id ? String(sale.bank_account_id) : '',
     prices_include_gst: sale.prices_include_gst,
     export_under_lut: sale.export_under_lut,
     notes: sale.notes || '',
     items: sale.items.map((item) => ({
+      product_id: item.product_id ? String(item.product_id) : '',
       description: item.description,
       quantity: item.quantity,
       unit_rate: item.unit_rate,
@@ -79,12 +82,15 @@ export default function SaleFormPage() {
     customer_id: '',
     sale_date: today(),
     payment_method: 'cash',
+    bank_account_id: '',
     prices_include_gst: false,
     export_under_lut: false,
     notes: '',
     items: [makeEmptyItem()],
   });
   const [customers, setCustomers] = useState([]);
+  const [products, setProducts] = useState([]);
+  const [bankAccounts, setBankAccounts] = useState([]);
   const [loading, setLoading] = useState(editing);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -95,12 +101,16 @@ export default function SaleFormPage() {
     const loadFormData = async () => {
       setError('');
       try {
-        const [customerResponse, saleResponse] = await Promise.all([
+        const [customerResponse, productResponse, bankResponse, saleResponse] = await Promise.all([
           api.get('/customers', { params: { per_page: 50 } }),
+          api.get('/inventory/products', { params: { per_page: 100 } }),
+          api.get('/banking/accounts'),
           editing ? api.get(`/sales/${saleId}`) : Promise.resolve(null),
         ]);
         if (!active) return;
         setCustomers(customerResponse.data.data);
+        setProducts(productResponse.data.data);
+        setBankAccounts(bankResponse.data.data);
         if (saleResponse) setForm(toFormSale(saleResponse.data));
       } catch (requestError) {
         if (active) setError(getErrorMessage(requestError, 'Could not load sale details.'));
@@ -150,11 +160,13 @@ export default function SaleFormPage() {
       customer_id: form.customer_id ? Number(form.customer_id) : null,
       sale_date: form.sale_date,
       payment_method: form.payment_method,
+      bank_account_id: form.bank_account_id ? Number(form.bank_account_id) : null,
       prices_include_gst: form.prices_include_gst,
       export_under_lut: form.export_under_lut,
       notes: form.notes.trim() || null,
       items: form.items.map((item) => ({
         ...item,
+        product_id: item.product_id ? Number(item.product_id) : null,
         description: item.description.trim(),
         quantity: Number(item.quantity),
         unit_rate: Number(item.unit_rate),
@@ -179,6 +191,25 @@ export default function SaleFormPage() {
     setCustomers((current) => [customer, ...current.filter((item) => item.id !== customer.id)]);
     setForm((current) => ({ ...current, customer_id: String(customer.id) }));
     setDrawerOpen(false);
+  };
+
+  const selectProduct = (index, productId) => {
+    const product = products.find((item) => String(item.id) === productId);
+    setForm((current) => ({
+      ...current,
+      items: current.items.map((item, itemIndex) => itemIndex === index
+        ? {
+          ...item,
+          product_id: productId,
+          ...(product ? {
+            description: product.name,
+            unit_rate: String(product.selling_price),
+            gst_rate: String(product.gst_rate),
+            hsn_sac: product.hsn_sac || '',
+          } : {}),
+        }
+        : item),
+    }));
   };
 
   if (loading) {
@@ -237,6 +268,13 @@ export default function SaleFormPage() {
               {form.payment_method === 'credit' && !form.customer_id && (
                 <small className="field-hint">Choose a saved customer before recording a credit sale.</small>
               )}
+              {form.payment_method === 'bank' && <label className="field-label bank-account-select">Bank account
+                <select required value={form.bank_account_id} onChange={(event) => setForm((current) => ({ ...current, bank_account_id: event.target.value }))}>
+                  <option value="">Select a bank account</option>
+                  {bankAccounts.map((account) => <option key={account.id} value={account.id}>{account.name} · {account.bank_name}{account.account_last4 ? ` ·••${account.account_last4}` : ''}</option>)}
+                </select>
+                {bankAccounts.length === 0 && <small className="field-hint">Add a bank account in Banking before choosing bank payment.</small>}
+              </label>}
             </div>
 
             <label className="field-label sale-date-field">
@@ -261,6 +299,13 @@ export default function SaleFormPage() {
             <div className="sale-items-list">
               {form.items.map((item, index) => (
                 <article className="sale-item-card" key={`sale-item-${index}`}>
+                  <label className="field-label inventory-link-field">
+                    Product from inventory
+                    <select value={item.product_id} onChange={(event) => selectProduct(index, event.target.value)}>
+                      <option value="">Free-text item</option>
+                      {products.map((product) => <option key={product.id} value={product.id}>{product.name}{product.track_stock ? ` · ${Number(product.current_stock).toLocaleString()} ${product.unit_code || ''} in stock` : ' · service / untracked'}</option>)}
+                    </select>
+                  </label>
                   <div className="sale-item-description">
                     <label className="sr-only" htmlFor={`item-description-${index}`}>Item {index + 1} description</label>
                     <input
@@ -288,7 +333,7 @@ export default function SaleFormPage() {
                     <label className="field-label">
                       GST %
                       <select name="gst_rate" value={item.gst_rate} onChange={(event) => updateItem(index, event)}>
-                        {[0, 5, 12, 18, 28].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
+                        {[0, 0.25, 3, 5, 12, 18, 28, 40].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
                       </select>
                     </label>
                     <label className="field-label">
@@ -341,7 +386,7 @@ export default function SaleFormPage() {
             <i className={`bx ${form.payment_method === 'credit' ? 'bx-time-five' : 'bx-check-circle'}`} />
             {form.payment_method === 'credit' ? 'This amount will be added to customer receivables.' : 'This sale will be recorded as paid.'}
           </div>
-          <button type="submit" className="btn btn-primary save-sale-button" disabled={saving || totals.total <= 0}>
+          <button type="submit" className="btn btn-primary save-sale-button" disabled={saving || totals.total <= 0 || (form.payment_method === 'bank' && !form.bank_account_id)}>
             {saving ? 'Saving sale…' : editing ? 'Save changes' : 'Save sale'}
           </button>
           <Link className="cancel-sale-link" to="/sales">Cancel</Link>

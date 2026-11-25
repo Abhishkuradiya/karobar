@@ -14,6 +14,7 @@ class Sale extends Model
     protected $fillable = [
         'business_id',
         'customer_id',
+        'bank_account_id',
         'current_journal_entry_id',
         'invoice_number',
         'customer_name_snapshot',
