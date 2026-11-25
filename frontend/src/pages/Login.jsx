@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/useAuth';
 import SneatLogo from '../components/SneatLogo';
 
 export default function Login() {
@@ -14,9 +14,8 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // If already authenticated, redirect
   if (isAuthenticated) {
-    navigate('/dashboard', { replace: true });
+    return <Navigate to="/dashboard" replace />;
   }
 
   const handleSubmit = async (e) => {

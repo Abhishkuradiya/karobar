@@ -1,0 +1,61 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R /F2 5 0 R >> >> /Contents 6 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+6 0 obj
+<< /Length 2046 >>
+stream
+BT /F2 20 Tf 54 748 Td (User Duplicate Check API) Tj ET
+BT /F1 10 Tf 54 718 Td (Existing registration API and duplicate-account behavior) Tj ET
+BT /F2 11 Tf 54 694 Td (Base URL: http://192.168.1.71:8000/api) Tj ET
+BT /F2 11 Tf 54 672 Td (Endpoint: POST http://192.168.1.71:8000/api/register) Tj ET
+BT /F1 10 Tf 54 650 Td (Request headers: Accept: application/json; Content-Type: application/json) Tj ET
+BT /F2 11 Tf 54 630 Td (Request body:) Tj ET
+BT /F1 10 Tf 54 613 Td ({) Tj ET
+BT /F1 10 Tf 54 599 Td (  "username": "sam",) Tj ET
+BT /F1 10 Tf 54 585 Td (  "name": "Sam",) Tj ET
+BT /F1 10 Tf 54 571 Td (  "email": "sam@example.com",) Tj ET
+BT /F1 10 Tf 54 557 Td (  "password": "secret123") Tj ET
+BT /F1 10 Tf 54 543 Td (}) Tj ET
+BT /F1 10 Tf 54 521 Td (username, email, and password are required. name is optional.) Tj ET
+BT /F2 13 Tf 54 499 Td (How duplicate prevention works) Tj ET
+BT /F1 10 Tf 54 479 Td (Registration validates that username and email are unique.) Tj ET
+BT /F1 10 Tf 54 463 Td (The database also has unique constraints on both fields.) Tj ET
+BT /F1 10 Tf 54 441 Td (New username and email: 201 Created; response includes the user and a Bearer token.) Tj ET
+BT /F1 10 Tf 54 423 Td (Existing username or email: 422 Unprocessable Content; no account is created.) Tj ET
+BT /F2 10 Tf 54 403 Td (Example duplicate response:) Tj ET
+BT /F1 9 Tf 54 387 Td ({ "message": "The email has already been taken.",) Tj ET
+BT /F1 9 Tf 54 374 Td (  "errors": { "email": ["The email has already been taken."] } }) Tj ET
+BT /F2 12 Tf 54 352 Td (Important) Tj ET
+BT /F1 10 Tf 54 334 Td (There is currently no separate read-only endpoint to check whether an account exists.) Tj ET
+BT /F1 10 Tf 54 318 Td (Do not use POST /register only as a check: if the details are new, it creates the account.) Tj ET
+BT /F1 10 Tf 54 302 Td (A dedicated availability endpoint would require a code change; none was made for this request.) Tj ET
+BT /F1 9 Tf 54 286 Td (For LAN access, use this address from a device on the same network. The IP may change.) Tj ET
+endstream
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000251 00000 n 
+0000000321 00000 n 
+0000000396 00000 n 
+trailer
+<< /Size 7 /Root 1 0 R >>
+startxref
+2493
+%%EOF
