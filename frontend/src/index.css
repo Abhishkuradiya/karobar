@@ -1,0 +1,10 @@
+/* Sneat Custom Overrides & Helpers */
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.spinner-border-sm {
+  width: 1rem;
+  height: 1rem;
+  border-width: 0.15em;
+}

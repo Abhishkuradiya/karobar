@@ -1,0 +1,33 @@
+# Root gitignore for KarobarV2
+
+# Backend
+backend/vendor/
+backend/node_modules/
+backend/public/build/
+backend/public/hot/
+backend/public/storage/
+backend/storage/*.key
+backend/storage/pail/
+backend/.env
+backend/.env.backup
+backend/.env.production
+backend/database/*.sqlite
+backend/database/*.sqlite-journal
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+frontend/*.local
+
+# Large zip file
+sneat-1.0.0.zip
+
+# Logs
+*.log
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
