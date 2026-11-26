@@ -1,0 +1,244 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 2508 >>\nstream\nq
+0.22 0.22 0.32 rg
+BT /F2 15.0 Tf 40 805.0 Td (Karobar API Reference) Tj ET
+BT /F1 9.0 Tf 40 777.0 Td (Version: 2026-11-26) Tj ET
+BT /F2 11.0 Tf 40 759.0 Td (API conventions) Tj ET
+BT /F1 9.0 Tf 40 736.0 Td (Base URL: `/api`) Tj ET
+BT /F1 9.0 Tf 40 718.0 Td (All endpoints in this document require a Sanctum bearer token unless marked public:) Tj ET
+BT /F1 9.0 Tf 40 700.0 Td (```http) Tj ET
+BT /F1 9.0 Tf 40 688.0 Td (Authorization: Bearer <token>) Tj ET
+BT /F1 9.0 Tf 40 676.0 Td (Accept: application/json) Tj ET
+BT /F1 9.0 Tf 40 664.0 Td (Content-Type: application/json) Tj ET
+BT /F1 7.5 Tf 40 646.0 Td (Every business endpoint uses the authenticated user and their active business. Clients do not send) Tj ET
+BT /F1 7.5 Tf 40 634.0 Td (`user_id` or `business_id`; the server derives both from the authenticated session and rejects records) Tj ET
+BT /F1 7.5 Tf 40 622.0 Td (outside the active business.) Tj ET
+BT /F1 7.5 Tf 40 604.0 Td (Successful writes return the created or updated resource. Deletes return `204 No Content`. Validation) Tj ET
+BT /F1 7.5 Tf 40 592.0 Td (failures return `422` with an `errors` object. Missing or foreign records return `404`.) Tj ET
+BT /F2 11.0 Tf 40 574.0 Td (Customers) Tj ET
+BT /F2 11.0 Tf 40 551.0 Td (Fetch all customers) Tj ET
+BT /F1 7.5 Tf 40 528.0 Td (`GET /api/customers?search=raj&per_page=15`) Tj ET
+BT /F1 7.5 Tf 40 510.0 Td (Response `200`:) Tj ET
+BT /F1 7.5 Tf 40 492.0 Td (```json) Tj ET
+BT /F1 7.5 Tf 40 480.0 Td ({) Tj ET
+BT /F1 7.5 Tf 40 468.0 Td (  "data": [{) Tj ET
+BT /F1 7.5 Tf 40 456.0 Td (    "id": 12, "name": "Raj Traders", "mobile": "9876543210",) Tj ET
+BT /F1 7.5 Tf 40 444.0 Td (    "email": "raj@example.com", "credit_days": 30, "credit_limit": "50000.00",) Tj ET
+BT /F1 7.5 Tf 40 432.0 Td (    "outstanding_balance": "12500.00", "sales_count": 4) Tj ET
+BT /F1 7.5 Tf 40 420.0 Td (  }],) Tj ET
+BT /F1 7.5 Tf 40 408.0 Td (  "meta": {"current_page": 1, "last_page": 1, "per_page": 15, "total": 1},) Tj ET
+BT /F1 7.5 Tf 40 396.0 Td (  "summary": {"count": 1, "outstanding": "12500.00"}) Tj ET
+BT /F1 7.5 Tf 40 384.0 Td (}) Tj ET
+BT /F2 11.0 Tf 40 366.0 Td (Add customer) Tj ET
+BT /F1 9.0 Tf 40 343.0 Td (`POST /api/customers`) Tj ET
+BT /F1 9.0 Tf 40 325.0 Td (```json) Tj ET
+BT /F1 9.0 Tf 40 313.0 Td ({"name":"Raj) Tj ET
+BT /F1 9.0 Tf 40 301.0 Td (Traders","mobile":"9876543210","credit_days":30,"credit_limit":50000,"gstin":null,"state":"Delhi","email":"raj@e) Tj ET
+BT /F1 9.0 Tf 40 289.0 Td (xample.com","address":"Main market"}) Tj ET
+Q
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 13 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 2603 >>\nstream\nq
+0.22 0.22 0.32 rg
+BT /F1 7.5 Tf 40 799.0 Td (Response `201`: the customer resource with `outstanding_balance`.) Tj ET
+BT /F2 11.0 Tf 40 781.0 Td (View, edit/update, and delete customer) Tj ET
+BT /F1 7.5 Tf 40 758.0 Td (`GET /api/customers/{customer}` returns the customer with outstanding balance and sales count.) Tj ET
+BT /F1 7.5 Tf 40 740.0 Td (`PATCH /api/customers/{customer}` accepts the same body as create and returns `200` with the updated) Tj ET
+BT /F1 7.5 Tf 40 728.0 Td (customer.) Tj ET
+BT /F1 7.5 Tf 40 710.0 Td (`DELETE /api/customers/{customer}` returns `204`. The customer is soft-deleted; linked sales remain part) Tj ET
+BT /F1 7.5 Tf 40 698.0 Td (of the business history.) Tj ET
+BT /F2 11.0 Tf 40 680.0 Td (Expenses) Tj ET
+BT /F2 11.0 Tf 40 657.0 Td (Fetch expenses) Tj ET
+BT /F1 7.5 Tf 40 634.0 Td (`GET /api/expenses?from=2026-11-01&to=2026-11-30&search=rent&per_page=15`) Tj ET
+BT /F1 7.5 Tf 40 616.0 Td (Response `200` includes `data`, pagination `meta`, and `summary` with `count`, `total`, and) Tj ET
+BT /F1 7.5 Tf 40 604.0 Td (`outstanding`.) Tj ET
+BT /F2 11.0 Tf 40 586.0 Td (Create expense) Tj ET
+BT /F1 7.5 Tf 40 563.0 Td (`POST /api/expenses`) Tj ET
+BT /F1 7.5 Tf 40 545.0 Td (```json) Tj ET
+BT /F1 7.5 Tf 40 533.0 Td ({) Tj ET
+BT /F1 7.5 Tf 40 521.0 Td (  "expense_date":"2026-11-26", "category":"Rent", "payment_method":"bank",) Tj ET
+BT /F1 7.5 Tf 40 509.0 Td (  "subtotal":10000, "tax_rate":18, "supplier_id":null, "bank_account_id":3,) Tj ET
+BT /F1 7.5 Tf 40 497.0 Td (  "claim_input_tax_credit":true, "amount_paid":11800, "note":"November rent") Tj ET
+BT /F1 7.5 Tf 40 485.0 Td (}) Tj ET
+BT /F1 9.0 Tf 40 467.0 Td (The response `201` contains the calculated tax, total, balance due, expense number, supplier, and scan-bill) Tj ET
+BT /F1 9.0 Tf 40 455.0 Td (relationships. The API posts the balanced accounting entry.) Tj ET
+BT /F2 11.0 Tf 40 437.0 Td (View, edit/update, and delete expense) Tj ET
+BT /F1 9.0 Tf 40 414.0 Td (`GET /api/expenses/{expense}` returns the complete expense.) Tj ET
+BT /F1 9.0 Tf 40 396.0 Td (`PATCH /api/expenses/{expense}` accepts the create body and returns `200`. The old journal entry is reversed and) Tj ET
+BT /F1 9.0 Tf 40 384.0 Td (a new balanced entry is posted.) Tj ET
+BT /F1 9.0 Tf 40 366.0 Td (`DELETE /api/expenses/{expense}` returns `204`. The expense is reversed in the journal before deletion.) Tj ET
+BT /F2 11.0 Tf 40 348.0 Td (Products and stock) Tj ET
+BT /F2 11.0 Tf 40 325.0 Td (Fetch all products with stock) Tj ET
+BT /F1 9.0 Tf 40 302.0 Td (`GET /api/inventory/products?search=oil&category_id=2&per_page=100`) Tj ET
+Q
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 13 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 2834 >>\nstream\nq
+0.22 0.22 0.32 rg
+BT /F1 9.0 Tf 40 799.0 Td (Response `200`:) Tj ET
+BT /F1 9.0 Tf 40 781.0 Td (```json) Tj ET
+BT /F1 9.0 Tf 40 769.0 Td ({) Tj ET
+BT /F1 9.0 Tf 40 757.0 Td (  "data": [{) Tj ET
+BT /F1 9.0 Tf 40 745.0 Td (    "id": 7, "name": "Mustard Oil", "sku": "OIL-1L", "unit_code":"pcs",) Tj ET
+BT /F1 9.0 Tf 40 733.0 Td (    "gst_rate":"5.00", "purchase_price":"120.00", "selling_price":"145.00",) Tj ET
+BT /F1 9.0 Tf 40 721.0 Td (    "track_stock":true, "current_stock":"42.000", "low_stock_threshold":"10.000",) Tj ET
+BT /F1 9.0 Tf 40 709.0 Td (    "stock_value":"5040.00", "category":{"id":2,"name":"Grocery"}) Tj ET
+BT /F1 9.0 Tf 40 697.0 Td (  }],) Tj ET
+BT /F1 9.0 Tf 40 685.0 Td (  "categories": [],) Tj ET
+BT /F1 9.0 Tf 40 673.0 Td (  "summary": {"products": 1, "low_stock": 0, "stock_value": "5040.00"}) Tj ET
+BT /F1 9.0 Tf 40 661.0 Td (}) Tj ET
+BT /F2 11.0 Tf 40 643.0 Td (Create product/item) Tj ET
+BT /F1 7.5 Tf 40 620.0 Td (`POST /api/inventory/products`) Tj ET
+BT /F1 7.5 Tf 40 602.0 Td (```json) Tj ET
+BT /F1 7.5 Tf 40 590.0 Td ({) Tj ET
+BT /F1 7.5 Tf 40 578.0 Td (  "name":"Mustard Oil", "sku":"OIL-1L", "hsn_sac":"1514", "unit_code":"pcs",) Tj ET
+BT /F1 7.5 Tf 40 566.0 Td (  "gst_rate":5, "purchase_price":120, "selling_price":145, "is_service":false,) Tj ET
+BT /F1 7.5 Tf 40 554.0 Td (  "track_stock":true, "batch_tracking":true, "low_stock_threshold":10,) Tj ET
+BT /F1 7.5 Tf 40 542.0 Td (  "opening_quantity":42, "opening_unit_cost":120, "opening_batch_number":"B-001",) Tj ET
+BT /F1 7.5 Tf 40 530.0 Td (  "opening_expiry_date":"2027-11-26") Tj ET
+BT /F1 7.5 Tf 40 518.0 Td (}) Tj ET
+BT /F1 9.0 Tf 40 500.0 Td (Response `201`: created product, category, current stock, and stock configuration.) Tj ET
+BT /F2 11.0 Tf 40 482.0 Td (Update and delete product) Tj ET
+BT /F1 9.0 Tf 40 459.0 Td (`PATCH /api/inventory/products/{product}` accepts product fields and returns `200`. Stock quantity is changed) Tj ET
+BT /F1 9.0 Tf 40 447.0 Td (separately through `PATCH /api/inventory/products/{product}/stock` with `{ "counted_quantity": 40, "notes":) Tj ET
+BT /F1 9.0 Tf 40 435.0 Td ("Physical count" }`.) Tj ET
+BT /F1 9.0 Tf 40 417.0 Td (`DELETE /api/inventory/products/{product}` returns `204`. Products can be archived only after stock reaches) Tj ET
+BT /F1 9.0 Tf 40 405.0 Td (zero.) Tj ET
+BT /F2 11.0 Tf 40 387.0 Td (Bank accounts) Tj ET
+BT /F2 11.0 Tf 40 364.0 Td (Fetch bank accounts) Tj ET
+BT /F1 9.0 Tf 40 341.0 Td (`GET /api/banking/accounts`) Tj ET
+BT /F1 9.0 Tf 40 323.0 Td (Response `200`: `{ "data": [{"id":3,"name":"Current) Tj ET
+BT /F1 9.0 Tf 40 311.0 Td (Account","bank_name":"HDFC","account_last4":"1234","ifsc":"HDFC0001234","upi_id":"store@hdfc","unreconciled_coun) Tj ET
+BT /F1 9.0 Tf 40 299.0 Td (t":2}] }`.) Tj ET
+BT /F2 11.0 Tf 40 281.0 Td (Create, update, and delete bank account) Tj ET
+Q
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 13 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 2653 >>\nstream\nq
+0.22 0.22 0.32 rg
+BT /F1 9.0 Tf 40 799.0 Td (`POST /api/banking/accounts` and `PATCH /api/banking/accounts/{account}` accept:) Tj ET
+BT /F1 9.0 Tf 40 781.0 Td (```json) Tj ET
+BT /F1 9.0 Tf 40 769.0 Td ({"name":"Current) Tj ET
+BT /F1 9.0 Tf 40 757.0 Td (Account","bank_name":"HDFC","account_number":"00001234","ifsc":"HDFC0001234","upi_id":"store@hdfc"}) Tj ET
+BT /F1 7.5 Tf 40 739.0 Td (The server stores only the last four account digits. Both methods return the account resource \(`201` for) Tj ET
+BT /F1 7.5 Tf 40 727.0 Td (create, `200` for update\).) Tj ET
+BT /F1 7.5 Tf 40 709.0 Td (`DELETE /api/banking/accounts/{account}` returns `204` and archives the account. Accounts with imported) Tj ET
+BT /F1 7.5 Tf 40 697.0 Td (statement history cannot be archived.) Tj ET
+BT /F2 11.0 Tf 40 679.0 Td (Sales) Tj ET
+BT /F2 11.0 Tf 40 656.0 Td (Fetch sales) Tj ET
+BT /F1 7.5 Tf 40 633.0 Td (`GET /api/sales?from=2026-11-01&to=2026-11-30&search=SAL&per_page=15`) Tj ET
+BT /F1 7.5 Tf 40 615.0 Td (Response `200` includes paginated `data`, `meta`, and `summary` \(`count`, `total`, `outstanding`\).) Tj ET
+BT /F2 11.0 Tf 40 597.0 Td (Create sale) Tj ET
+BT /F1 7.5 Tf 40 574.0 Td (`POST /api/sales`) Tj ET
+BT /F1 7.5 Tf 40 556.0 Td (```json) Tj ET
+BT /F1 7.5 Tf 40 544.0 Td ({) Tj ET
+BT /F1 7.5 Tf 40 532.0 Td (  "sale_date":"2026-11-26", "customer_id":12, "payment_method":"credit",) Tj ET
+BT /F1 7.5 Tf 40 520.0 Td (  "prices_include_gst":false, "export_under_lut":false, "amount_paid":0,) Tj ET
+BT /F1 7.5 Tf 40 508.0 Td (  "notes":"Regular order",) Tj ET
+BT /F1 7.5 Tf 40 496.0 Td (  "items":[{"product_id":7,"description":"Mustard) Tj ET
+BT /F1 7.5 Tf 40 484.0 Td (Oil","quantity":2,"unit_rate":145,"discount":0,"gst_rate":5,"hsn_sac":"1514"}]) Tj ET
+BT /F1 7.5 Tf 40 472.0 Td (}) Tj ET
+BT /F1 9.0 Tf 40 454.0 Td (Response `201`: sale/invoice number, calculated totals, customer, items, balance due, and journal-linked data.) Tj ET
+BT /F2 11.0 Tf 40 436.0 Td (View, edit/update, and delete sale) Tj ET
+BT /F1 9.0 Tf 40 413.0 Td (`GET /api/sales/{sale}` returns the sale with customer and items.) Tj ET
+BT /F1 9.0 Tf 40 395.0 Td (`PATCH /api/sales/{sale}` accepts the create body and returns `200`. Existing accounting and stock movements are) Tj ET
+BT /F1 9.0 Tf 40 383.0 Td (reversed and reposted safely.) Tj ET
+BT /F1 9.0 Tf 40 365.0 Td (`DELETE /api/sales/{sale}` returns `204` after reversing its accounting and inventory effects. Sales with return) Tj ET
+BT /F1 9.0 Tf 40 353.0 Td (notes cannot be deleted.) Tj ET
+BT /F2 11.0 Tf 40 335.0 Td (Today net sales comparison) Tj ET
+BT /F1 9.0 Tf 40 312.0 Td (`GET /api/dashboard/today-net-sales`) Tj ET
+Q
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 13 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 2935 >>\nstream\nq
+0.22 0.22 0.32 rg
+BT /F1 9.0 Tf 40 799.0 Td (Response `200`:) Tj ET
+BT /F1 9.0 Tf 40 781.0 Td (```json) Tj ET
+BT /F1 9.0 Tf 40 769.0 Td ({) Tj ET
+BT /F1 9.0 Tf 40 757.0 Td (  "date":"2026-11-26", "today_sales":5310.00, "yesterday_sales":4200.00,) Tj ET
+BT /F1 9.0 Tf 40 745.0 Td (  "difference":1110.00, "difference_percent":26.43, "comparison":"increase") Tj ET
+BT /F1 9.0 Tf 40 733.0 Td (}) Tj ET
+BT /F1 7.5 Tf 40 715.0 Td (`difference_percent` is `\(today_sales - yesterday_sales\) / yesterday_sales * 100`. If yesterday is zero,) Tj ET
+BT /F1 7.5 Tf 40 703.0 Td (it is `null` and `comparison` is `new_sales` or `no_change`.) Tj ET
+BT /F2 11.0 Tf 40 685.0 Td (Recent transactions) Tj ET
+BT /F1 7.5 Tf 40 662.0 Td (`GET /api/dashboard/recent-transactions?limit=10`) Tj ET
+BT /F1 7.5 Tf 40 644.0 Td (Always combines the latest sales, purchases, and expenses for the active business, sorts them by creation) Tj ET
+BT /F1 7.5 Tf 40 632.0 Td (time, and returns the newest records:) Tj ET
+BT /F1 7.5 Tf 40 614.0 Td (```json) Tj ET
+BT /F1 7.5 Tf 40 602.0 Td ({) Tj ET
+BT /F1 7.5 Tf 40 590.0 Td (  "data":[) Tj ET
+BT /F1 7.5 Tf 40 578.0 Td (    {"id":18,"type":"sale","title":"Sale","reference":"SAL-20261126-000018","party":"Raj) Tj ET
+BT /F1 7.5 Tf 40 566.0 Td (Traders","date":"2026-11-26","amount":1522.50,"created_at":"2026-11-26T10:20:00.000000Z"},) Tj ET
+BT /F1 7.5 Tf 40 554.0 Td (    {"id":9,"type":"purchase","title":"Purchase","reference":"PUR-20261126-000009","party":"ABC) Tj ET
+BT /F1 7.5 Tf 40 542.0 Td (Distributors","date":"2026-11-26","amount":900.00,"created_at":"2026-11-26T10:15:00.000000Z"},) Tj ET
+BT /F1 7.5 Tf 40 530.0 Td (   ) Tj ET
+BT /F1 7.5 Tf 40 518.0 Td ({"id":4,"type":"expense","title":"Expense","reference":"EXP-20261126-000004","party":"Rent","date":"2026-) Tj ET
+BT /F1 7.5 Tf 40 506.0 Td (11-26","amount":11800.00,"created_at":"2026-11-26T09:55:00.000000Z"}) Tj ET
+BT /F1 7.5 Tf 40 494.0 Td (  ],) Tj ET
+BT /F1 7.5 Tf 40 482.0 Td (  "meta":{"limit":10,"total":3}) Tj ET
+BT /F1 7.5 Tf 40 470.0 Td (}) Tj ET
+BT /F2 11.0 Tf 40 452.0 Td (Existing related endpoints) Tj ET
+BT /F1 9.0 Tf 40 429.0 Td (`GET /api/dashboard/summary` supplies the dashboard KPI cards. `GET /api/activity` supplies the full accounting) Tj ET
+BT /F1 9.0 Tf 40 417.0 Td (audit trail. `GET /api/banking/accounts/{account}/reconciliation` supplies bank matching data. `POST) Tj ET
+BT /F1 9.0 Tf 40 405.0 Td (/api/banking/accounts/{account}/statements` imports CSV statements.) Tj ET
+BT /F2 11.0 Tf 40 387.0 Td (Security and data isolation) Tj ET
+BT /F1 9.0 Tf 40 364.0 Td (All listed endpoints are inside `auth:sanctum` and `EnsureActiveBusiness` middleware. Controllers scope records) Tj ET
+BT /F1 9.0 Tf 40 352.0 Td (by both authenticated user and `active_business_id`. Never trust a business ID supplied by a client. Store) Tj ET
+BT /F1 9.0 Tf 40 340.0 Td (bearer tokens securely and use HTTPS outside local development.) Tj ET
+Q
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 13 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Type /Pages /Kids [4 0 R 6 0 R 8 0 R 10 0 R 12 0 R] /Count 5 >>
+endobj
+14 0 obj
+<< /Type /Catalog /Pages 13 0 R >>
+endobj
+xref
+0 15
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000002715 00000 n 
+0000002852 00000 n 
+0000005508 00000 n 
+0000005645 00000 n 
+0000008532 00000 n 
+0000008669 00000 n 
+0000011375 00000 n 
+0000011513 00000 n 
+0000014502 00000 n 
+0000014641 00000 n 
+0000014725 00000 n 
+trailer
+<< /Size 15 /Root 14 0 R >>
+startxref
+14776
+%%EOF

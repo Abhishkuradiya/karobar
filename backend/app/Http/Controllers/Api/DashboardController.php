@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Expense;
+use App\Models\Purchase;
+use App\Models\Sale;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -54,5 +57,50 @@ class DashboardController extends Controller
                 ->whereDate('expense_date', $today)
                 ->count(),
         ]);
+    }
+
+    public function todayNetSales(Request $request): JsonResponse
+    {
+        $businessId = $request->user()->activeBusiness->id;
+        $today = now()->toDateString();
+        $yesterday = now()->subDay()->toDateString();
+        $sales = Sale::query()->where('user_id', $request->user()->id)->where('business_id', $businessId);
+        $todayTotal = (float) (clone $sales)->whereDate('sale_date', $today)->sum('total');
+        $yesterdayTotal = (float) (clone $sales)->whereDate('sale_date', $yesterday)->sum('total');
+        $change = $yesterdayTotal == 0.0 ? null : round((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100, 2);
+
+        return response()->json([
+            'date' => $today,
+            'today_sales' => round($todayTotal, 2),
+            'yesterday_sales' => round($yesterdayTotal, 2),
+            'difference' => round($todayTotal - $yesterdayTotal, 2),
+            'difference_percent' => $change,
+            'comparison' => $change === null ? ($todayTotal > 0 ? 'new_sales' : 'no_change') : ($change > 0 ? 'increase' : ($change < 0 ? 'decrease' : 'no_change')),
+        ]);
+    }
+
+    public function recentTransactions(Request $request): JsonResponse
+    {
+        $validated = $request->validate(['limit' => ['nullable', 'integer', 'min:1', 'max:50']]);
+        $user = $request->user();
+        $businessId = $user->activeBusiness->id;
+        $limit = $validated['limit'] ?? 10;
+        $transactions = collect()
+            ->merge(Sale::query()->where('user_id', $user->id)->where('business_id', $businessId)->latest('created_at')->limit($limit)->get()->map(fn (Sale $sale): array => [
+                'id' => $sale->id, 'type' => 'sale', 'title' => 'Sale', 'reference' => $sale->invoice_number,
+                'party' => $sale->customer_name_snapshot, 'date' => $sale->sale_date->format('Y-m-d'), 'amount' => (float) $sale->total, 'created_at' => $sale->created_at,
+            ]))
+            ->merge(Purchase::query()->where('user_id', $user->id)->where('business_id', $businessId)->latest('created_at')->limit($limit)->get()->map(fn (Purchase $purchase): array => [
+                'id' => $purchase->id, 'type' => 'purchase', 'title' => 'Purchase', 'reference' => $purchase->purchase_number,
+                'party' => $purchase->supplier_name_snapshot, 'date' => $purchase->purchase_date->format('Y-m-d'), 'amount' => (float) $purchase->total, 'created_at' => $purchase->created_at,
+            ]))
+            ->merge(Expense::query()->where('user_id', $user->id)->where('business_id', $businessId)->latest('created_at')->limit($limit)->get()->map(fn (Expense $expense): array => [
+                'id' => $expense->id, 'type' => 'expense', 'title' => 'Expense', 'reference' => $expense->expense_number,
+                'party' => $expense->category, 'date' => $expense->expense_date->format('Y-m-d'), 'amount' => (float) $expense->total, 'created_at' => $expense->created_at,
+            ]))
+            ->sortByDesc('created_at')->take($limit)->values()
+            ->map(fn (array $item): array => [...$item, 'amount' => round($item['amount'], 2), 'created_at' => $item['created_at']->toISOString()]);
+
+        return response()->json(['data' => $transactions, 'meta' => ['limit' => $limit, 'total' => $transactions->count()]]);
     }
 }

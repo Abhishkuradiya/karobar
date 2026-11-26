@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
+import PaginationControls from '../components/PaginationControls';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 const paymentLabels = {
@@ -16,7 +17,7 @@ export default function PurchasesPage() {
   const location = useLocation();
   const [purchases, setPurchases] = useState([]);
   const [meta, setMeta] = useState(emptyMeta);
-  const [filters, setFilters] = useState({ fromInput: '', toInput: '', from: '', to: '' });
+  const [filters, setFilters] = useState({ searchInput: '', search: '', fromInput: '', toInput: '', from: '', to: '' });
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -26,6 +27,7 @@ export default function PurchasesPage() {
     params: {
       from: filters.from || undefined,
       to: filters.to || undefined,
+      search: filters.search || undefined,
       page,
       per_page: 15,
     },
@@ -78,6 +80,7 @@ export default function PurchasesPage() {
       ...current,
       from: current.fromInput,
       to: current.toInput,
+      search: current.searchInput.trim(),
     }));
   };
 
@@ -117,7 +120,11 @@ export default function PurchasesPage() {
 
       <div className="purchase-filter-row">
         <form className="sales-filter-form" onSubmit={applyFilters}>
-          <label className="compact-field">
+            <label className="search-box purchase-search-box">
+              <i className="bx bx-search" />
+              <input aria-label="Search purchases" name="searchInput" value={filters.searchInput} onChange={updateFilter} placeholder="Search purchase, supplier or item" />
+            </label>
+            <label className="compact-field">
             <span>From</span>
             <input aria-label="From date" type="date" name="fromInput" value={filters.fromInput} onChange={updateFilter} />
           </label>
@@ -136,9 +143,9 @@ export default function PurchasesPage() {
         ) : purchases.length === 0 ? (
           <div className="empty-state">
             <span className="empty-state-icon"><i className="bx bx-file" /></span>
-            <h3>{filters.from || filters.to ? 'No purchases in this date range' : 'No purchases yet'}</h3>
+            <h3>{filters.search || filters.from || filters.to ? 'No purchases match these filters' : 'No purchases yet'}</h3>
             <p>Record supplier bills — input GST and supplier balances update automatically.</p>
-            {!filters.from && !filters.to && <Link className="btn btn-primary" to="/purchases/new">Record your first purchase</Link>}
+            {!filters.search && !filters.from && !filters.to && <Link className="btn btn-primary" to="/purchases/new">Record your first purchase</Link>}
           </div>
         ) : (
           <>
@@ -189,13 +196,7 @@ export default function PurchasesPage() {
                 </tbody>
               </table>
             </div>
-            <div className="pagination-bar">
-              <span>Page {meta.current_page} of {meta.last_page}</span>
-              <div>
-                <button type="button" className="btn btn-outline-secondary btn-sm" disabled={page <= 1} onClick={() => changePage(page - 1)}>Previous</button>
-                <button type="button" className="btn btn-outline-secondary btn-sm ms-2" disabled={page >= meta.last_page} onClick={() => changePage(page + 1)}>Next</button>
-              </div>
-            </div>
+            <PaginationControls page={page} meta={meta} onChange={changePage} />
           </>
         )}
       </section>

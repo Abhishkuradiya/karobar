@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Customer;
+use App\Models\JournalEntry;
+use App\Models\Sale;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 use Illuminate\Http\JsonResponse;
@@ -78,6 +80,85 @@ class CustomerController extends Controller
                 ->loadSum('sales as outstanding_balance', 'balance_due')
                 ->loadCount('sales')
         );
+    }
+
+    public function ledger(Request $request, int $customer): JsonResponse
+    {
+        $record = $this->ownedCustomer($request, $customer);
+        $validated = $request->validate([
+            'from' => ['nullable', 'date_format:Y-m-d'],
+            'to' => ['nullable', 'date_format:Y-m-d'],
+            'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
+        ]);
+
+        $salesQuery = Sale::query()
+            ->where('user_id', $request->user()->id)
+            ->where('business_id', $request->user()->activeBusiness->id)
+            ->where('customer_id', $record->id)
+            ->when($validated['from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('sale_date', '>=', $date))
+            ->when($validated['to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('sale_date', '<=', $date));
+
+        $allSales = (clone $salesQuery)->get(['id', 'invoice_number', 'sale_date', 'payment_method', 'total', 'amount_paid', 'balance_due', 'due_date']);
+        $perPage = $validated['per_page'] ?? 25;
+        $invoices = (clone $salesQuery)->with(['items.product'])->latest('sale_date')->latest('id')->paginate($perPage, ['*'], 'invoice_page')->withQueryString();
+
+        $journalEntries = JournalEntry::query()
+            ->where('user_id', $request->user()->id)
+            ->where('business_id', $request->user()->activeBusiness->id)
+            ->where('source_type', 'sale')
+            ->whereIn('source_id', $allSales->pluck('id'))
+            ->with('lines')
+            ->orderByDesc('entry_date')
+            ->orderByDesc('id')
+            ->paginate($perPage, ['*'], 'ledger_page')
+            ->through(function (JournalEntry $entry): array {
+                $sale = Sale::query()->whereKey($entry->source_id)->first();
+                return [
+                    'id' => $entry->id,
+                    'date' => $entry->entry_date?->format('Y-m-d'),
+                    'source_type' => $entry->source_type,
+                    'source_id' => $entry->source_id,
+                    'reference' => $sale?->invoice_number,
+                    'description' => $entry->description,
+                    'debit' => round((float) $entry->lines->where('account_code', 'accounts_receivable')->sum('debit'), 2),
+                    'credit' => round((float) $entry->lines->where('account_code', 'accounts_receivable')->sum('credit'), 2),
+                    'lines' => $entry->lines->map(fn ($line): array => [
+                        'account_code' => $line->account_code,
+                        'debit' => (float) $line->debit,
+                        'credit' => (float) $line->credit,
+                    ])->values(),
+                ];
+            });
+
+        return response()->json([
+            'customer' => $record->only(['id', 'name', 'mobile', 'email', 'gstin', 'state', 'address', 'credit_days', 'credit_limit']),
+            'summary' => [
+                'invoice_count' => $allSales->count(),
+                'total_invoiced' => round((float) $allSales->sum('total'), 2),
+                'total_paid' => round((float) $allSales->sum('amount_paid'), 2),
+                'outstanding_balance' => round((float) $allSales->sum('balance_due'), 2),
+                'credit_sales' => $allSales->where('payment_method', 'credit')->count(),
+                'last_invoice_date' => $allSales->max('sale_date')?->format('Y-m-d'),
+            ],
+            'invoices' => [
+                'data' => $invoices->items(),
+                'meta' => [
+                    'current_page' => $invoices->currentPage(),
+                    'last_page' => $invoices->lastPage(),
+                    'per_page' => $invoices->perPage(),
+                    'total' => $invoices->total(),
+                ],
+            ],
+            'ledger' => [
+                'data' => $journalEntries->items(),
+                'meta' => [
+                    'current_page' => $journalEntries->currentPage(),
+                    'last_page' => $journalEntries->lastPage(),
+                    'per_page' => $journalEntries->perPage(),
+                    'total' => $journalEntries->total(),
+                ],
+            ],
+        ]);
     }
 
     public function update(Request $request, int $customer): JsonResponse

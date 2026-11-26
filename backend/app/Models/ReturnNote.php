@@ -52,4 +52,9 @@ class ReturnNote extends Model
     {
         return $this->hasMany(ReturnNoteItem::class);
     }
+
+    public function currentJournalEntry(): BelongsTo
+    {
+        return $this->belongsTo(JournalEntry::class, 'current_journal_entry_id');
+    }
 }

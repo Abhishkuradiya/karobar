@@ -4,14 +4,6 @@ import api from '../api/axios';
 import { useAuth } from '../context/useAuth';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 
-const paymentLabels = {
-  cash: 'Cash',
-  upi: 'UPI',
-  card: 'Card',
-  bank: 'Bank',
-  credit: 'Credit',
-};
-
 export default function Dashboard() {
   const { activeBusiness } = useAuth();
 
@@ -20,7 +12,8 @@ export default function Dashboard() {
 
 function DashboardContent() {
   const [summary, setSummary] = useState(null);
-  const [recentSales, setRecentSales] = useState([]);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [netSales, setNetSales] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -28,12 +21,14 @@ function DashboardContent() {
     let active = true;
     Promise.all([
       api.get('/dashboard/summary'),
-      api.get('/sales', { params: { per_page: 5 } }),
+      api.get('/dashboard/today-net-sales'),
+      api.get('/dashboard/recent-transactions', { params: { limit: 8 } }),
     ])
-      .then(([summaryResponse, salesResponse]) => {
+      .then(([summaryResponse, netSalesResponse, transactionsResponse]) => {
         if (!active) return;
         setSummary(summaryResponse.data);
-        setRecentSales(salesResponse.data.data);
+        setNetSales(netSalesResponse.data);
+        setRecentTransactions(transactionsResponse.data.data);
       })
       .catch((requestError) => {
         if (active) setError(getErrorMessage(requestError, 'Could not load your business summary.'));
@@ -59,6 +54,11 @@ function DashboardContent() {
       {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
 
       <div className="summary-grid dashboard-summary-grid">
+        <article className="summary-card">
+          <span className="summary-icon summary-icon-blue"><i className="bx bx-line-chart" /></span>
+          <div><small>Net sales vs yesterday</small><strong>{loading ? 'Loading' : netSales?.difference_percent === null ? 'New sales' : `${netSales?.difference_percent}%`}</strong></div>
+          <span className="summary-footnote">Daily sales comparison</span>
+        </article>
         <article className="summary-card">
           <span className="summary-icon summary-icon-violet"><i className="bx bx-trending-up" /></span>
           <div><small>Today's sales</small><strong>{loading ? '—' : formatMoney(summary?.today_sales)}</strong></div>
@@ -99,29 +99,29 @@ function DashboardContent() {
       <div className="dashboard-lower-grid">
         <section className="data-card">
           <div className="data-card-toolbar">
-            <div><h2>Recent sales</h2><span className="muted-copy">Latest recorded transactions</span></div>
-            <Link className="text-link" to="/sales">View all <i className="bx bx-right-arrow-alt" /></Link>
+            <div><h2>Recent transactions</h2><span className="muted-copy">Latest sales, purchases and expenses</span></div>
+            <Link className="text-link" to="/activity">View all <i className="bx bx-right-arrow-alt" /></Link>
           </div>
           {loading ? (
             <div className="loading-state"><span className="spinner-border spinner-border-sm text-primary" /> Loading activity…</div>
-          ) : recentSales.length === 0 ? (
+          ) : recentTransactions.length === 0 ? (
             <div className="compact-empty-state">
               <i className="bx bx-receipt" />
-              <strong>No sales recorded yet</strong>
-              <span>Your saved sales will appear here.</span>
+              <strong>No transactions recorded yet</strong>
+              <span>Your saved sales, purchases and expenses will appear here.</span>
             </div>
           ) : (
             <div className="table-responsive">
               <table className="business-table">
-                <thead><tr><th>Sale</th><th>Date</th><th>Customer</th><th>Payment</th><th className="text-end">Total</th></tr></thead>
+                <thead><tr><th>Type</th><th>Date</th><th>Party / category</th><th>Reference</th><th className="text-end">Amount</th></tr></thead>
                 <tbody>
-                  {recentSales.map((sale) => (
-                    <tr key={sale.id}>
-                      <td><Link className="table-primary-link" to={`/sales/${sale.id}/edit`}>{sale.invoice_number}</Link></td>
-                      <td>{formatDate(sale.sale_date)}</td>
-                      <td>{sale.customer?.name || sale.customer_name_snapshot}</td>
-                      <td><span className={`payment-badge payment-${sale.payment_method}`}>{paymentLabels[sale.payment_method]}</span></td>
-                      <td className="text-end fw-semibold">{formatMoney(sale.total)}</td>
+                  {recentTransactions.map((transaction) => (
+                    <tr key={`${transaction.type}-${transaction.id}`}>
+                      <td><span className={`payment-badge payment-${transaction.type}`}>{transaction.title}</span></td>
+                      <td>{formatDate(transaction.date)}</td>
+                      <td>{transaction.party}</td>
+                      <td>{transaction.reference}</td>
+                      <td className="text-end fw-semibold">{formatMoney(transaction.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -145,7 +145,7 @@ function DashboardContent() {
             <i className="bx bx-chevron-right" />
           </Link>
           <Link to="/purchases/new" className="quick-action-link">
-            <span className="quick-action-icon"><i className="bx bx-cart-add" /></span>
+            <span className="quick-action-icon"><i className="bx bx-cart" /></span>
             <span><strong>Record a purchase</strong><small>Supplier bill, GST and payment</small></span>
             <i className="bx bx-chevron-right" />
           </Link>
@@ -160,7 +160,7 @@ function DashboardContent() {
             <i className="bx bx-chevron-right" />
           </Link>
           <Link to="/suppliers" className="quick-action-link">
-            <span className="quick-action-icon quick-action-icon-blue"><i className="bx bx-truck" /></span>
+            <span className="quick-action-icon quick-action-icon-blue"><i className="bx bx-store-alt" /></span>
             <span><strong>Manage suppliers</strong><small>Review contact details and balances</small></span>
             <i className="bx bx-chevron-right" />
           </Link>

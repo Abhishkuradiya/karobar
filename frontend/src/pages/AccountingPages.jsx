@@ -4,6 +4,7 @@ import api from '../api/axios';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 import './inventory-banking-invoices.css';
 import './accounting-pages.css';
+import PaginationControls from '../components/PaginationControls';
 
 const currentMonth = () => {
   const date = new Date();
@@ -214,6 +215,9 @@ export function CashTallyPage() {
 
 export function ActivityPage() {
   const [filters, setFilters] = useState({ from: '', to: '' });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [items, setItems] = useState([]);
   const [meta, setMeta] = useState({ total: 0 });
   const [loading, setLoading] = useState(true);
@@ -226,7 +230,7 @@ export function ActivityPage() {
 
   useEffect(() => {
     let active = true;
-    api.get('/activity', { params: { from: filters.from || undefined, to: filters.to || undefined, per_page: 100 } })
+    api.get('/activity', { params: { from: filters.from || undefined, to: filters.to || undefined, search: search || undefined, page, per_page: 25 } })
       .then((response) => {
         if (!active) return;
         setItems(response.data.data);
@@ -235,7 +239,9 @@ export function ActivityPage() {
       .catch((requestError) => { if (active) setError(getErrorMessage(requestError, 'Could not load business activity.')); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [filters]);
+  }, [filters, page, search]);
+
+  const applySearch = (event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); };
 
   return (
     <section className="page-stack">
@@ -243,9 +249,10 @@ export function ActivityPage() {
       <PageAlerts error={error} />
       <section className="data-card">
         <div className="data-card-toolbar accounting-activity-toolbar"><div><h2>Recent activity</h2><span className="muted-copy">{meta.total} event(s) in the selected range.</span></div>
-          <div className="accounting-date-filters"><label className="compact-field"><span>From</span><input type="date" aria-label="Activity start date" value={filters.from} onChange={(event) => updateFilters('from', event.target.value)} /></label><label className="compact-field"><span>To</span><input type="date" aria-label="Activity end date" value={filters.to} onChange={(event) => updateFilters('to', event.target.value)} /></label></div>
+          <div className="accounting-date-filters"><form className="search-form" onSubmit={applySearch}><i className="bx bx-search" /><input aria-label="Search activity" value={searchInput} onChange={(event) => setSearchInput(event.target.value)} placeholder="Search activity" /><button type="submit" className="btn btn-outline-secondary btn-sm">Search</button></form><label className="compact-field"><span>From</span><input type="date" aria-label="Activity start date" value={filters.from} onChange={(event) => { setPage(1); updateFilters('from', event.target.value); }} /></label><label className="compact-field"><span>To</span><input type="date" aria-label="Activity end date" value={filters.to} onChange={(event) => { setPage(1); updateFilters('to', event.target.value); }} /></label></div>
         </div>
         {loading ? <div className="loading-state">Loading activity…</div> : items.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-time-five" /></span><h3>No activity in this period</h3><p>Posted sales, purchases, expenses and journal entries will appear here.</p></div> : <div className="accounting-activity-list">{items.map((item) => <article className="accounting-activity-item" key={item.id}><span className={`accounting-activity-icon${item.is_reversal ? ' is-reversal' : ''}`}><i className={`bx ${item.is_reversal ? 'bx-undo' : 'bx-check'}`} /></span><div className="accounting-activity-copy"><strong>{item.title}</strong><span>{item.description}</span><small>{formatDate(item.entry_date)} · {item.user || 'Business user'} · {item.source_type.replaceAll('_', ' ')}</small></div><strong className="accounting-activity-amount">{formatMoney(item.amount)}</strong></article>)}</div>}
+      <PaginationControls page={page} meta={meta} onChange={(nextPage) => { setLoading(true); setPage(nextPage); }} />
       </section>
     </section>
   );
@@ -384,6 +391,7 @@ export function ChartOfAccountsPage() {
   const [search, setSearch] = useState('');
   const [type, setType] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
   const [form, setForm] = useState({ display_code: '', name: '', account_type: 'assets', group_name: '' });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -407,13 +415,61 @@ export function ChartOfAccountsPage() {
     setError('');
     setNotice('');
     try {
-      const response = await api.post('/chart-of-accounts', form);
-      setAccounts((current) => [...current, response.data].sort((a, b) => a.display_code.localeCompare(b.display_code, undefined, { numeric: true })));
+      const payload = editingAccount?.is_system
+        ? { name: form.name, group_name: form.group_name }
+        : form;
+      const response = editingAccount
+        ? await api.patch(`/chart-of-accounts/${encodeURIComponent(editingAccount.account_code)}`, payload)
+        : await api.post('/chart-of-accounts', form);
+      setAccounts((current) => {
+        const updated = editingAccount
+          ? current.map((account) => account.account_code === response.data.account_code ? response.data : account)
+          : [...current, response.data];
+        return updated.sort((a, b) => a.display_code.localeCompare(b.display_code, undefined, { numeric: true }));
+      });
       setModalOpen(false);
+      setEditingAccount(null);
       setForm({ display_code: '', name: '', account_type: 'assets', group_name: '' });
-      setNotice(`${response.data.name} was added to the chart of accounts.`);
+      setNotice(editingAccount
+        ? `${response.data.name} was updated.`
+        : `${response.data.name} was added to the chart of accounts.`);
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Could not add this account.'));
+      setError(getErrorMessage(requestError, editingAccount ? 'Could not update this account.' : 'Could not add this account.'));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openCreate = () => {
+    setEditingAccount(null);
+    setForm({ display_code: '', name: '', account_type: 'assets', group_name: '' });
+    setError('');
+    setModalOpen(true);
+  };
+
+  const openEdit = (account) => {
+    setEditingAccount(account);
+    setForm({
+      display_code: account.display_code,
+      name: account.name,
+      account_type: account.account_type,
+      group_name: account.group_name,
+    });
+    setError('');
+    setModalOpen(true);
+  };
+
+  const deleteAccount = async (account) => {
+    if (!window.confirm(`Delete ${account.name}? Accounts with journal history or required by accounting workflows cannot be deleted.`)) return;
+    setSaving(true);
+    setError('');
+    setNotice('');
+    try {
+      await api.delete(`/chart-of-accounts/${encodeURIComponent(account.account_code)}`);
+      setAccounts((current) => current.filter((item) => item.account_code !== account.account_code));
+      setNotice(`${account.name} was deleted.`);
+    } catch (requestError) {
+      setError(getErrorMessage(requestError, 'Could not delete this account.'));
     } finally {
       setSaving(false);
     }
@@ -423,14 +479,14 @@ export function ChartOfAccountsPage() {
   return (
     <section className="page-stack">
       <PageHeading eyebrow="ACCOUNTING STRUCTURE" title="Chart of accounts" description="Browse your ledger accounts and add business-specific accounts.">
-        <button className="btn btn-primary" type="button" onClick={() => { setError(''); setModalOpen(true); }}><i className="bx bx-plus me-1" /> New account</button>
+        <button className="btn btn-primary" type="button" onClick={openCreate}><i className="bx bx-plus me-1" /> New account</button>
       </PageHeading>
       <PageAlerts error={error} notice={notice} onDismiss={() => setNotice('')} />
       <section className="data-card">
         <div className="data-card-toolbar accounting-accounts-toolbar"><div><h2>All accounts</h2><span className="muted-copy">{visibleAccounts.length} account(s) · system accounts are protected from deletion.</span></div><div className="accounting-date-filters"><label className="search-box"><i className="bx bx-search" /><input aria-label="Search accounts" placeholder="Search code or name" value={search} onChange={(event) => setSearch(event.target.value)} /></label><label className="compact-field"><span>Type</span><select value={type} onChange={(event) => setType(event.target.value)}><option value="">All account types</option>{types.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label></div></div>
-        {loading ? <div className="loading-state">Loading accounts…</div> : visibleAccounts.length === 0 ? <div className="empty-state"><h3>No accounts match</h3><p>Try changing your search or account type.</p></div> : <div className="table-responsive"><table className="business-table"><thead><tr><th>Code</th><th>Account name</th><th>Account type</th><th>Group</th><th className="text-end">Balance</th><th>Source</th></tr></thead><tbody>{visibleAccounts.map((account) => <tr key={account.account_code}><td><strong>{account.display_code}</strong></td><td>{account.name}</td><td className="text-capitalize">{account.account_type}</td><td>{account.group_name}</td><td className="text-end">{formatMoney(account.balance)}</td><td><span className={`accounting-source-tag${account.is_system ? '' : ' is-custom'}`}>{account.is_system ? 'System' : 'Custom'}</span></td></tr>)}</tbody></table></div>}
+        {loading ? <div className="loading-state">Loading accounts…</div> : visibleAccounts.length === 0 ? <div className="empty-state"><h3>No accounts match</h3><p>Try changing your search or account type.</p></div> : <div className="table-responsive"><table className="business-table"><thead><tr><th>Code</th><th>Account name</th><th>Account type</th><th>Group</th><th className="text-end">Balance</th><th>Source</th><th>Actions</th></tr></thead><tbody>{visibleAccounts.map((account) => <tr key={account.account_code}><td><strong>{account.display_code}</strong></td><td>{account.name}{account.is_required && <small className="accounting-required-note">Required</small>}</td><td className="text-capitalize">{account.account_type}</td><td>{account.group_name}</td><td className="text-end">{formatMoney(account.balance)}</td><td><span className={`accounting-source-tag${account.is_system ? '' : ' is-custom'}`}>{account.is_system ? 'System' : 'Custom'}</span></td><td><div className="accounting-account-actions"><button className="btn btn-sm btn-outline-primary" type="button" disabled={saving} onClick={() => openEdit(account)}><i className="bx bx-edit-alt me-1" />Edit</button><button className="btn btn-sm btn-outline-danger" type="button" disabled={saving || !account.can_delete} title={!account.can_delete ? (account.is_required ? 'Required system account' : 'Account has journal history') : 'Delete account'} onClick={() => deleteAccount(account)}><i className="bx bx-trash me-1" />Delete</button></div></td></tr>)}</tbody></table></div>}
       </section>
-      {modalOpen && <div className="inventory-modal-backdrop"><section className="inventory-modal inventory-modal-narrow" role="dialog" aria-modal="true" aria-labelledby="account-modal-title"><div className="inventory-modal-header"><div><span className="eyebrow">BUSINESS LEDGER</span><h2 id="account-modal-title">Add account</h2></div><button className="icon-button" type="button" aria-label="Close" onClick={() => setModalOpen(false)}><i className="bx bx-x" /></button></div><form onSubmit={save}><div className="inventory-modal-body"><div className="accounting-journal-form"><label className="inventory-field">Account code<input required maxLength="20" value={form.display_code} onChange={(event) => setForm((current) => ({ ...current, display_code: event.target.value }))} /></label><label className="inventory-field">Account name<input required maxLength="120" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label><label className="inventory-field">Account type<select value={form.account_type} onChange={(event) => setForm((current) => ({ ...current, account_type: event.target.value }))}>{types.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label className="inventory-field">Group name<input maxLength="80" value={form.group_name} onChange={(event) => setForm((current) => ({ ...current, group_name: event.target.value }))} placeholder="Optional" /></label><p className="small text-secondary mb-0">Accounts with posted transactions are retained for audit history.</p></div></div><div className="inventory-modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={() => setModalOpen(false)}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : 'Save account'}</button></div></form></section></div>}
+      {modalOpen && <div className="inventory-modal-backdrop"><section className="inventory-modal inventory-modal-narrow" role="dialog" aria-modal="true" aria-labelledby="account-modal-title"><div className="inventory-modal-header"><div><span className="eyebrow">BUSINESS LEDGER</span><h2 id="account-modal-title">{editingAccount ? 'Edit account' : 'Add account'}</h2></div><button className="icon-button" type="button" aria-label="Close" onClick={() => { setModalOpen(false); setEditingAccount(null); }}><i className="bx bx-x" /></button></div><form onSubmit={save}><div className="inventory-modal-body"><div className="accounting-journal-form"><label className="inventory-field">Account code<input required maxLength="20" disabled={Boolean(editingAccount?.is_system)} value={form.display_code} onChange={(event) => setForm((current) => ({ ...current, display_code: event.target.value }))} /></label><label className="inventory-field">Account name<input required maxLength="120" value={form.name} onChange={(event) => setForm((current) => ({ ...current, name: event.target.value }))} /></label><label className="inventory-field">Account type<select disabled={Boolean(editingAccount?.is_system || (editingAccount?.has_transactions))} value={form.account_type} onChange={(event) => setForm((current) => ({ ...current, account_type: event.target.value }))}>{types.map(([id, label]) => <option key={id} value={id}>{label}</option>)}</select></label><label className="inventory-field">Group name<input required maxLength="80" value={form.group_name} onChange={(event) => setForm((current) => ({ ...current, group_name: event.target.value }))} /></label><p className="small text-secondary mb-0">{editingAccount?.is_system ? 'System account codes and types are fixed to protect automatic postings.' : editingAccount?.has_transactions ? 'The account type cannot be changed because this account has journal history.' : 'Accounts with posted transactions are retained for audit history.'}</p></div></div><div className="inventory-modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={() => { setModalOpen(false); setEditingAccount(null); }}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving…' : editingAccount ? 'Save changes' : 'Save account'}</button></div></form></section></div>}
     </section>
   );
 }

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import api from '../api/axios';
 import { formatMoney, getErrorMessage } from '../utils/format';
+import PaginationControls from '../components/PaginationControls';
 import './inventory-banking-invoices.css';
 
 const gstRates = ['0', '0.25', '3', '5', '12', '18', '28', '40'];
@@ -12,16 +14,20 @@ const emptyProduct = () => ({
 });
 const tabs = [
   { id: 'products', label: 'Products & services', icon: 'bx-cube' },
-  { id: 'reorder', label: 'Reorder list', icon: 'bx-cart-add' },
+  { id: 'reorder', label: 'Reorder list', icon: 'bx-cart' },
   { id: 'expiring', label: 'Expiring stock', icon: 'bx-calendar-exclamation' },
   { id: 'transfers', label: 'Branch transfers', icon: 'bx-transfer-alt' },
 ];
 
-export default function InventoryPage() {
-  const [tab, setTab] = useState('products');
+export default function InventoryPage({ initialTab = 'products' }) {
+  const { pathname } = useLocation();
+  const routeTab = pathname === '/inventory/reorder' ? 'reorder' : pathname === '/inventory/expiry' ? 'expiring' : initialTab;
+  const [tab, setTab] = useState(routeTab);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [summary, setSummary] = useState({ products: 0, low_stock: 0, stock_value: 0 });
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
+  const [page, setPage] = useState(1);
   const [reorder, setReorder] = useState([]);
   const [expiring, setExpiring] = useState([]);
   const [days, setDays] = useState(30);
@@ -39,14 +45,19 @@ export default function InventoryPage() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
+  useEffect(() => {
+    setTab(routeTab);
+  }, [routeTab]);
+
   const loadProducts = useCallback(async () => {
     const response = await api.get('/inventory/products', {
-      params: { search: search || undefined, category_id: categoryFilter || undefined, per_page: 100 },
+      params: { search: search || undefined, category_id: categoryFilter || undefined, page, per_page: 25 },
     });
     setProducts(response.data.data);
+    setMeta(response.data.meta || { current_page: page, last_page: 1, total: response.data.data.length });
     setCategories(response.data.categories);
     setSummary(response.data.summary);
-  }, [categoryFilter, search]);
+  }, [categoryFilter, page, search]);
 
   const loadList = useCallback(async () => {
     if (tab === 'products') return loadProducts();
@@ -222,14 +233,14 @@ export default function InventoryPage() {
             <div className="data-card-toolbar inventory-toolbar">
               <div><h2>Product list</h2><span className="muted-copy">Stock is valued at the recorded purchase cost.</span></div>
               <div className="inventory-filters">
-                <label className="search-box"><i className="bx bx-search" /><input aria-label="Search products" value={search} onChange={(event) => { setLoading(true); setError(''); setSearch(event.target.value); }} placeholder="Name, SKU or barcode" /></label>
-                <select aria-label="Filter by category" value={categoryFilter} onChange={(event) => { setLoading(true); setError(''); setCategoryFilter(event.target.value); }}><option value="">All categories</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select>
+                <label className="search-box"><i className="bx bx-search" /><input aria-label="Search products" value={search} onChange={(event) => { setLoading(true); setError(''); setPage(1); setSearch(event.target.value); }} placeholder="Name, SKU or barcode" /></label>
+                <select aria-label="Filter by category" value={categoryFilter} onChange={(event) => { setLoading(true); setError(''); setPage(1); setCategoryFilter(event.target.value); }}><option value="">All categories</option>{categories.map((category) => <option value={category.id} key={category.id}>{category.name}</option>)}</select>
               </div>
             </div>
             {loading ? <div className="loading-state"><span className="spinner-border spinner-border-sm text-primary" /> Loading products…</div> : products.length === 0 ? (
               <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-cube" /></span><h3>No products found</h3><p>Add goods or services to track their price, GST and stock status.</p><button className="btn btn-primary" type="button" onClick={openNewProduct}>Add your first product</button></div>
             ) : (
-              <div className="table-responsive"><table className="business-table"><thead><tr><th>Product</th><th>Category</th><th>GST</th><th className="text-end">Purchase</th><th className="text-end">Selling</th><th className="text-end">On hand</th><th>Status</th><th /></tr></thead><tbody>
+              <><div className="table-responsive"><table className="business-table"><thead><tr><th>Product</th><th>Category</th><th>GST</th><th className="text-end">Purchase</th><th className="text-end">Selling</th><th className="text-end">On hand</th><th>Status</th><th /></tr></thead><tbody>
                 {products.map((product) => {
                   const low = product.track_stock && product.low_stock_threshold !== null && Number(product.current_stock) <= Number(product.low_stock_threshold);
                   return <tr key={product.id}>
@@ -241,7 +252,7 @@ export default function InventoryPage() {
                     <td><div className="table-actions">{product.track_stock && <button className="icon-button" type="button" title="Adjust stock" aria-label={`Adjust ${product.name} stock`} onClick={() => { setStockProduct(product); setStockCount(String(product.current_stock)); setStockNotes(''); }}><i className="bx bx-transfer" /></button>}<button className="icon-button" type="button" title="Edit product" aria-label={`Edit ${product.name}`} onClick={() => openEditProduct(product)}><i className="bx bx-edit-alt" /></button><button className="icon-button danger-icon" type="button" title="Archive product" aria-label={`Archive ${product.name}`} onClick={() => archiveProduct(product)}><i className="bx bx-archive" /></button></div></td>
                   </tr>;
                 })}
-              </tbody></table></div>
+              </tbody></table></div><PaginationControls page={page} meta={meta} onChange={(nextPage) => { setLoading(true); setPage(nextPage); }} /></>
             )}
           </section>
         </>

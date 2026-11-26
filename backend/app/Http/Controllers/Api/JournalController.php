@@ -20,6 +20,7 @@ class JournalController extends Controller
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
             'account_code' => ['nullable', 'string', 'max:40'],
+            'search' => ['nullable', 'string', 'max:100'],
             'per_page' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
         if (! empty($validated['from']) && ! empty($validated['to']) && $validated['from'] > $validated['to']) {
@@ -34,6 +35,12 @@ class JournalController extends Controller
             ->when($validated['account_code'] ?? null, function (Builder $builder, string $accountCode): void {
                 $builder->whereHas('lines', fn (Builder $lines) => $lines->where('account_code', $accountCode));
             });
+        if (! empty($validated['search'])) {
+            $query->where(function (Builder $builder) use ($validated): void {
+                $builder->where('description', 'like', '%'.$validated['search'].'%')
+                    ->orWhere('source_type', 'like', '%'.$validated['search'].'%');
+            });
+        }
         $entries = (clone $query)
             ->with('lines')
             ->withSum('lines as debit_total', 'debit')

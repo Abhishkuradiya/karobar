@@ -10,6 +10,10 @@ class Business extends Model
 {
     protected $fillable = [
         'name',
+        'legal_name',
+        'address',
+        'postal_code',
+        'phone',
         'gst_registration_type',
         'gstin',
         'gst_return_frequency',

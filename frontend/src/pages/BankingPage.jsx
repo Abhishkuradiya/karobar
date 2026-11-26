@@ -16,6 +16,7 @@ export default function BankingPage() {
   const [bookRows, setBookRows] = useState([]);
   const [matches, setMatches] = useState({});
   const [accountModal, setAccountModal] = useState(false);
+  const [editingAccount, setEditingAccount] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -99,17 +100,29 @@ export default function BankingPage() {
     setSaving(true);
     setError('');
     try {
-      const response = await api.post('/banking/accounts', accountForm);
-      setAccounts((current) => [...current, response.data]);
+      const response = editingAccount
+        ? await api.patch(`/banking/accounts/${editingAccount.id}`, accountForm)
+        : await api.post('/banking/accounts', accountForm);
+      setAccounts((current) => editingAccount
+        ? current.map((item) => item.id === editingAccount.id ? { ...item, ...response.data } : item)
+        : [...current, response.data]);
       setAccountId(String(response.data.id));
       setAccountForm(emptyAccount());
+      setEditingAccount(null);
       setAccountModal(false);
-      setNotice(`Bank account ${response.data.name} added. Only its last four account digits are stored.`);
+      setNotice(`Bank account ${response.data.name} ${editingAccount ? 'updated' : 'added'}. Only its last four account digits are stored.`);
     } catch (requestError) {
       setError(getErrorMessage(requestError, 'Could not save this bank account.'));
     } finally {
       setSaving(false);
     }
+  };
+
+  const openEditAccount = (account) => {
+    setEditingAccount(account);
+    setAccountForm({ name: account.name || '', bank_name: account.bank_name || '', account_number: account.account_last4 || '', ifsc: account.ifsc || '', upi_id: account.upi_id || '' });
+    setAccountModal(true);
+    setError('');
   };
 
   const archiveAccount = async (account) => {
@@ -203,7 +216,7 @@ export default function BankingPage() {
     <section className="page-stack">
       <div className="page-heading">
         <div><span className="eyebrow">CASH & BANK RECONCILIATION</span><h1>Banking</h1><p>Import statements and match each bank transaction to your books.</p></div>
-        <button className="btn btn-primary" type="button" onClick={() => { setAccountModal(true); setError(''); }}><i className="bx bx-plus me-1" /> Add bank account</button>
+        <button className="btn btn-primary" type="button" onClick={() => { setEditingAccount(null); setAccountForm(emptyAccount()); setAccountModal(true); setError(''); }}><i className="bx bx-plus me-1" /> Add bank account</button>
       </div>
       {notice && <div className="alert alert-success py-2" role="status">{notice}<button className="btn-close float-end" type="button" aria-label="Dismiss" onClick={() => setNotice('')} /></div>}
       {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
@@ -213,6 +226,7 @@ export default function BankingPage() {
         {loading ? <div className="loading-state">Loading bank accounts…</div> : accounts.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-building-house" /></span><h3>No bank accounts yet</h3><p>Add an account to import a statement and reconcile bank-paid transactions.</p><button className="btn btn-primary" type="button" onClick={() => setAccountModal(true)}>Add a bank account</button></div> : <div className="bank-account-grid">{accounts.map((account) => <article key={account.id} className={`bank-account-card${String(account.id) === String(accountId) ? ' is-selected' : ''}`}><button type="button" className="stretched-link-button" aria-label={`Select ${account.name}`} onClick={() => { setAccountId(String(account.id)); setError(''); }} /><h3>{account.name}</h3><p>{account.bank_name}</p><span className="account-last4">{account.account_last4 ? `•••• ${account.account_last4}` : 'Account number not provided'}</span><div className="account-actions"><button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setAccountId(String(account.id))}>Reconcile <span className="badge text-bg-light ms-1">{account.unreconciled_count || 0}</span></button><button type="button" className="icon-button danger-icon" aria-label={`Archive ${account.name}`} title="Archive account" onClick={() => archiveAccount(account)}><i className="bx bx-archive" /></button></div></article>)}</div>}
       </div>
 
+      {activeAccount && <button className="btn btn-outline-primary align-self-end" type="button" onClick={() => openEditAccount(activeAccount)}><i className="bx bx-edit-alt me-1" /> Edit {activeAccount.name}</button>}
       {activeAccount && <section className="data-card">
         <div className="data-card-toolbar banking-toolbar"><div><h2>Reconcile {activeAccount.name}</h2><span className="muted-copy">{statementRows.length} unmatched statement line(s) · {bookRows.length} unmatched book entry(ies)</span></div>
           <form className="statement-upload" onSubmit={importStatement}><input aria-label="CSV statement file" type="file" accept=".csv,text/csv" onChange={(event) => setStatementFile(event.target.files?.[0] || null)} /><button className="btn btn-outline-primary btn-sm" type="submit" disabled={!statementFile || saving}>{saving ? 'Importing…' : 'Import CSV'}</button><small>CSV columns: Date, Description and Amount, or Debit and Credit. Up to 5 MB / 5,000 rows.</small></form>

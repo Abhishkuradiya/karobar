@@ -244,7 +244,10 @@ GET /chart-of-accounts
 
 Accounts are grouped under `data` by account type (`assets`, `liabilities`,
 `equity`, `income`, `expenses`). Each account includes its code, name, group,
-normal balance, debit/credit totals, current balance, and `is_system` flag.
+normal balance, debit/credit totals, current balance, `is_system`,
+`is_required`, `has_transactions`, and `can_delete` flags. Only accounts needed
+by the app's active posting workflows are shown by default; optional built-in
+accounts appear when they have journal history or have been customized.
 
 ### Add a custom account
 
@@ -265,6 +268,29 @@ POST /chart-of-accounts
 `equity`, `income`, or `expenses`. Codes already used by system or custom
 accounts in the active business are rejected. The response includes the
 generated internal `account_code` and `is_system: false` (`201 Created`).
+
+### Edit an account
+
+```http
+PATCH /chart-of-accounts/{account_code}
+```
+
+For a custom account, send `display_code`, `name`, `account_type`, and
+`group_name`. For a built-in system account, send only `name` and
+`group_name`; its internal code and account type are fixed to protect automatic
+postings. A custom account's type cannot be changed after it has journal
+history.
+
+### Delete an account
+
+```http
+DELETE /chart-of-accounts/{account_code}
+```
+
+Custom accounts are removed, while optional built-in accounts are hidden for
+the active business. Accounts with journal history cannot be deleted, and
+required system accounts cannot be deleted. Both successful delete responses
+use `204 No Content`.
 
 ## Data imports
 

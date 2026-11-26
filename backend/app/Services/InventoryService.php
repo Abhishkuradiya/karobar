@@ -9,6 +9,7 @@ use App\Models\Purchase;
 use App\Models\PurchaseItem;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\ReturnNote;
 use Illuminate\Validation\ValidationException;
 
 class InventoryService
@@ -16,36 +17,41 @@ class InventoryService
     public function receivePurchase(Purchase $purchase): void
     {
         foreach ($purchase->items()->with('product')->lockForUpdate()->get() as $item) {
-            $product = $item->product;
-            if (! $product) {
-                continue;
-            }
-
-            $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
-            $product->update(['purchase_price' => $item->unit_rate]);
-            if (! $product->track_stock || $product->is_service) {
-                continue;
-            }
-            $unitCostTotal = $purchase->claim_input_tax_credit
-                ? (float) $item->taxable_amount
-                : (float) $item->line_total;
-            $unitCost = round($unitCostTotal / (float) $item->quantity, 4);
-            $batch = InventoryBatch::create([
-                'user_id' => $purchase->user_id,
-                'business_id' => $purchase->business_id,
-                'product_id' => $product->id,
-                'purchase_id' => $purchase->id,
-                'purchase_item_id' => $item->id,
-                'batch_number' => $item->batch_number,
-                'received_date' => $purchase->purchase_date,
-                'expiry_date' => $item->expiry_date,
-                'quantity_received' => $item->quantity,
-                'quantity_remaining' => $item->quantity,
-                'unit_cost' => $unitCost,
-            ]);
-            $product->increment('current_stock', (float) $item->quantity);
-            $this->movement($purchase, $product, $batch, 'purchase', 'purchase', $purchase->id, (float) $item->quantity, $unitCost, null, $item->id);
+            $this->receivePurchaseItem($purchase, $item);
         }
+    }
+
+    public function receivePurchaseItem(Purchase $purchase, PurchaseItem $item): void
+    {
+        $product = $item->product;
+        if (! $product) {
+            return;
+        }
+
+        $product = Product::query()->whereKey($product->id)->lockForUpdate()->firstOrFail();
+        $product->update(['purchase_price' => $item->unit_rate]);
+        if (! $product->track_stock || $product->is_service) {
+            return;
+        }
+        $unitCostTotal = $purchase->claim_input_tax_credit
+            ? (float) $item->taxable_amount
+            : (float) $item->line_total;
+        $unitCost = round($unitCostTotal / (float) $item->quantity, 4);
+        $batch = InventoryBatch::create([
+            'user_id' => $purchase->user_id,
+            'business_id' => $purchase->business_id,
+            'product_id' => $product->id,
+            'purchase_id' => $purchase->id,
+            'purchase_item_id' => $item->id,
+            'batch_number' => $item->batch_number,
+            'received_date' => $purchase->purchase_date,
+            'expiry_date' => $item->expiry_date,
+            'quantity_received' => $item->quantity,
+            'quantity_remaining' => $item->quantity,
+            'unit_cost' => $unitCost,
+        ]);
+        $product->increment('current_stock', (float) $item->quantity);
+        $this->movement($purchase, $product, $batch, 'purchase', 'purchase', $purchase->id, (float) $item->quantity, $unitCost, null, $item->id);
     }
 
     public function consumeSale(Sale $sale): float
@@ -255,6 +261,7 @@ class InventoryService
             ->where('source_type', 'credit_note')
             ->where('sale_item_id', $saleItem->id)
             ->where('quantity_delta', '>', 0)
+            ->whereNull('reversed_at')
             ->selectRaw('batch_id, SUM(quantity_delta) as returned_quantity')
             ->groupBy('batch_id')
             ->pluck('returned_quantity', 'batch_id');
@@ -337,6 +344,75 @@ class InventoryService
         );
 
         return round($quantity * (float) $batch->unit_cost, 2);
+    }
+
+    public function reverseReturnNote(ReturnNote $note): void
+    {
+        $movements = InventoryMovement::query()
+            ->where('business_id', $note->business_id)
+            ->where('source_type', $note->note_type.'_note')
+            ->where('source_id', $note->id)
+            ->whereNull('reversed_at')
+            ->whereNotNull('batch_id')
+            ->with(['product', 'batch'])
+            ->lockForUpdate()
+            ->get();
+
+        foreach ($movements as $movement) {
+            if (! $movement->product || ! $movement->batch) {
+                throw ValidationException::withMessages([
+                    'note' => ['This note has incomplete inventory history and cannot be changed.'],
+                ]);
+            }
+
+            $product = Product::withTrashed()->lockForUpdate()->findOrFail($movement->product_id);
+            $batch = InventoryBatch::query()->lockForUpdate()->findOrFail($movement->batch_id);
+            $delta = (float) $movement->quantity_delta;
+            $quantity = abs($delta);
+
+            if ($note->note_type === 'credit') {
+                if ($delta <= 0) {
+                    throw ValidationException::withMessages([
+                        'note' => ['This credit note has inconsistent inventory history and cannot be changed.'],
+                    ]);
+                }
+                if ((float) $batch->quantity_remaining < $quantity || (float) $product->current_stock < $quantity) {
+                    throw ValidationException::withMessages([
+                        'note' => ['Some stock returned by this credit note has since been sold or adjusted, so it cannot be edited or deleted.'],
+                    ]);
+                }
+                $batch->decrement('quantity_remaining', $quantity);
+                $product->decrement('current_stock', $quantity);
+                $delta = -$quantity;
+            } else {
+                if ($delta >= 0 || $batch->reversed_at) {
+                    throw ValidationException::withMessages([
+                        'note' => ['This debit note has inconsistent inventory history and cannot be changed.'],
+                    ]);
+                }
+                if ($product->trashed()) {
+                    $product->restore();
+                }
+                $batch->increment('quantity_remaining', $quantity);
+                $product->increment('current_stock', $quantity);
+                $delta = $quantity;
+            }
+
+            $this->writeMovement(
+                $note->user_id,
+                $note->business_id,
+                $product,
+                $batch,
+                $note->note_type.'_note_reversal',
+                $note->note_type.'_note_reversal',
+                $note->id,
+                $delta,
+                (float) $movement->unit_cost,
+                $movement->sale_item_id,
+                $movement->purchase_item_id
+            );
+            $movement->update(['reversed_at' => now()]);
+        }
     }
 
     private function writeMovement(

@@ -416,6 +416,17 @@
   gap: 13px;
 }
 
+.return-note-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.return-note-actions .btn {
+  align-items: center;
+  display: inline-flex;
+}
+
 .statement-upload {
   display: flex;
   align-items: center;

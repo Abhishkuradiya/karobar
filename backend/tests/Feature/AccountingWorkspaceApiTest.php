@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Models\Business;
+use App\Models\ChartAccount;
+use App\Models\JournalEntry;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
@@ -42,6 +44,101 @@ class AccountingWorkspaceApiTest extends TestCase
             'account_type' => 'assets',
         ])->assertUnprocessable()
             ->assertJsonValidationErrors('display_code');
+    }
+
+    public function test_chart_accounts_can_be_edited_and_unused_accounts_deleted_without_changing_system_posting_codes(): void
+    {
+        $user = $this->authenticatedUser();
+
+        $this->patchJson('/api/chart-of-accounts/cash', [
+            'name' => 'Till cash',
+            'group_name' => 'Cash-in-Hand',
+        ])->assertOk()
+            ->assertJsonPath('account_code', 'cash')
+            ->assertJsonPath('name', 'Till cash')
+            ->assertJsonPath('is_required', true);
+        $this->assertDatabaseHas('chart_account_overrides', [
+            'business_id' => $user->active_business_id,
+            'account_code' => 'cash',
+            'name' => 'Till cash',
+        ]);
+        $this->deleteJson('/api/chart-of-accounts/cash')->assertUnprocessable();
+
+        $this->getJson('/api/chart-of-accounts')
+            ->assertOk()
+            ->assertJsonMissing(['account_code' => 'fixed_assets']);
+        $this->patchJson('/api/chart-of-accounts/fixed_assets', [
+            'name' => 'Property and equipment',
+            'group_name' => 'Fixed Assets',
+        ])->assertOk()
+            ->assertJsonPath('can_delete', true);
+        $this->deleteJson('/api/chart-of-accounts/fixed_assets')->assertNoContent();
+        $this->assertDatabaseHas('chart_account_overrides', [
+            'business_id' => $user->active_business_id,
+            'account_code' => 'fixed_assets',
+            'is_hidden' => true,
+        ]);
+        $this->getJson('/api/chart-of-accounts')
+            ->assertOk()
+            ->assertJsonMissing(['account_code' => 'fixed_assets']);
+
+        $custom = ChartAccount::create([
+            'user_id' => $user->id,
+            'business_id' => $user->active_business_id,
+            'display_code' => '9001',
+            'account_code' => 'custom_edit_test',
+            'name' => 'Old label',
+            'account_type' => 'assets',
+            'group_name' => 'Other Assets',
+        ]);
+        $this->patchJson('/api/chart-of-accounts/custom_edit_test', [
+            'display_code' => '9002',
+            'name' => 'Updated label',
+            'account_type' => 'assets',
+            'group_name' => 'Equipment',
+        ])->assertOk()
+            ->assertJsonPath('display_code', '9002')
+            ->assertJsonPath('name', 'Updated label');
+        $this->deleteJson('/api/chart-of-accounts/custom_edit_test')->assertNoContent();
+        $this->assertDatabaseMissing('chart_accounts', ['id' => $custom->id]);
+    }
+
+    public function test_chart_accounts_with_journal_history_cannot_be_deleted_or_retyped(): void
+    {
+        $user = $this->authenticatedUser();
+        $account = ChartAccount::create([
+            'user_id' => $user->id,
+            'business_id' => $user->active_business_id,
+            'display_code' => '9003',
+            'account_code' => 'custom_with_history',
+            'name' => 'Tracked account',
+            'account_type' => 'assets',
+            'group_name' => 'Other Assets',
+        ]);
+        $entry = JournalEntry::create([
+            'user_id' => $user->id,
+            'business_id' => $user->active_business_id,
+            'entry_date' => now()->toDateString(),
+            'source_type' => 'manual_adjustment',
+            'source_id' => 1,
+            'description' => 'Account history guard',
+        ]);
+        $entry->lines()->create([
+            'account_code' => $account->account_code,
+            'debit' => 10,
+            'credit' => 0,
+        ]);
+
+        $this->patchJson('/api/chart-of-accounts/custom_with_history', [
+            'display_code' => '9003',
+            'name' => 'Tracked account',
+            'account_type' => 'income',
+            'group_name' => 'Income',
+        ])->assertUnprocessable()
+            ->assertJsonValidationErrors('account_type');
+        $this->deleteJson('/api/chart-of-accounts/custom_with_history')->assertUnprocessable()
+            ->assertJsonValidationErrors('account');
+        $this->assertDatabaseHas('chart_accounts', ['id' => $account->id]);
     }
 
     public function test_manual_journal_requires_balanced_lines_and_lists_the_posted_entry(): void

@@ -171,6 +171,138 @@ class InventoryBankingInvoiceApiTest extends TestCase
         $this->putJson("/api/purchases/{$purchase['id']}", [])->assertUnprocessable()->assertJsonValidationErrors('purchase');
     }
 
+    public function test_credit_note_can_be_edited_and_deleted_with_stock_and_journals_reversed(): void
+    {
+        $this->authenticatedUser();
+        $product = $this->createProduct();
+        $this->postJson('/api/purchases', [
+            'supplier_id' => null,
+            'purchase_date' => today()->toDateString(),
+            'payment_method' => 'cash',
+            'prices_include_gst' => false,
+            'claim_input_tax_credit' => true,
+            'reverse_charge' => false,
+            'items' => [[
+                'product_id' => $product->id,
+                'description' => $product->name,
+                'quantity' => 5,
+                'unit_rate' => 10,
+                'gst_rate' => 0,
+                'discount' => 0,
+            ]],
+        ])->assertCreated()->json();
+        $sale = $this->postJson('/api/sales', [
+            'customer_id' => null,
+            'sale_date' => today()->toDateString(),
+            'payment_method' => 'cash',
+            'prices_include_gst' => false,
+            'export_under_lut' => false,
+            'items' => [[
+                'product_id' => $product->id,
+                'description' => $product->name,
+                'quantity' => 3,
+                'unit_rate' => 20,
+                'gst_rate' => 0,
+                'discount' => 0,
+            ]],
+        ])->assertCreated()->json();
+        $note = $this->postJson('/api/credit-notes', [
+            'sale_id' => $sale['id'],
+            'note_date' => today()->toDateString(),
+            'settlement_method' => 'cash',
+            'items' => [['item_id' => $sale['items'][0]['id'], 'quantity' => 1]],
+        ])->assertCreated()->json();
+        $originalJournalId = $note['current_journal_entry_id'];
+
+        $updated = $this->putJson("/api/credit-notes/{$note['id']}", [
+            'sale_id' => $sale['id'],
+            'note_date' => today()->toDateString(),
+            'settlement_method' => 'cash',
+            'reason' => 'Updated return quantity',
+            'items' => [['item_id' => $sale['items'][0]['id'], 'quantity' => 2]],
+        ])->assertOk()
+            ->assertJsonPath('id', $note['id'])
+            ->assertJsonPath('total', '40.00')
+            ->json();
+
+        $this->assertSame(4.0, (float) Product::findOrFail($product->id)->current_stock);
+        $this->assertDatabaseHas('journal_entries', [
+            'reversal_of_id' => $originalJournalId,
+            'source_type' => 'credit_note_reversal',
+        ]);
+        $this->deleteJson("/api/credit-notes/{$note['id']}")->assertOk();
+        $this->assertSame(2.0, (float) Product::findOrFail($product->id)->current_stock);
+        $this->getJson('/api/credit-notes')->assertOk()->assertJsonCount(0, 'data');
+        $this->assertDatabaseHas('journal_entries', [
+            'reversal_of_id' => $updated['current_journal_entry_id'],
+            'source_type' => 'credit_note_reversal',
+        ]);
+    }
+
+    public function test_debit_note_can_be_edited_and_deleted_and_is_not_accessible_from_another_business(): void
+    {
+        $user = $this->authenticatedUser();
+        $product = $this->createProduct();
+        $purchase = $this->postJson('/api/purchases', [
+            'supplier_id' => null,
+            'purchase_date' => today()->toDateString(),
+            'payment_method' => 'cash',
+            'prices_include_gst' => false,
+            'claim_input_tax_credit' => true,
+            'reverse_charge' => false,
+            'items' => [[
+                'product_id' => $product->id,
+                'description' => $product->name,
+                'quantity' => 5,
+                'unit_rate' => 10,
+                'gst_rate' => 0,
+                'discount' => 0,
+            ]],
+        ])->assertCreated()->json();
+        $note = $this->postJson('/api/debit-notes', [
+            'purchase_id' => $purchase['id'],
+            'note_date' => today()->toDateString(),
+            'settlement_method' => 'cash',
+            'items' => [['item_id' => $purchase['items'][0]['id'], 'quantity' => 1]],
+        ])->assertCreated()->json();
+        $originalJournalId = $note['current_journal_entry_id'];
+
+        $updated = $this->putJson("/api/debit-notes/{$note['id']}", [
+            'purchase_id' => $purchase['id'],
+            'note_date' => today()->toDateString(),
+            'settlement_method' => 'cash',
+            'items' => [['item_id' => $purchase['items'][0]['id'], 'quantity' => 2]],
+        ])->assertOk()->assertJsonPath('total', '20.00')->json();
+        $this->assertSame(3.0, (float) Product::findOrFail($product->id)->current_stock);
+        $this->assertDatabaseHas('journal_entries', [
+            'reversal_of_id' => $originalJournalId,
+            'source_type' => 'debit_note_reversal',
+        ]);
+
+        $otherUser = User::factory()->create([
+            'username' => 'other-owner-'.fake()->unique()->numberBetween(1000, 9999),
+            'email' => fake()->unique()->safeEmail(),
+        ]);
+        $otherBusiness = $otherUser->businesses()->create([
+            'name' => 'Other business',
+            'gst_registration_type' => 'not_registered',
+            'business_type' => 'retail_shop',
+            'language' => 'en',
+        ]);
+        $otherUser->forceFill(['active_business_id' => $otherBusiness->id])->save();
+        Sanctum::actingAs($otherUser);
+        $this->deleteJson("/api/debit-notes/{$note['id']}")->assertNotFound();
+
+        Sanctum::actingAs($user);
+        $this->deleteJson("/api/debit-notes/{$note['id']}")->assertOk();
+        $this->assertSame(5.0, (float) Product::findOrFail($product->id)->current_stock);
+        $this->getJson('/api/debit-notes')->assertOk()->assertJsonCount(0, 'data');
+        $this->assertDatabaseHas('journal_entries', [
+            'reversal_of_id' => $updated['current_journal_entry_id'],
+            'source_type' => 'debit_note_reversal',
+        ]);
+    }
+
     public function test_sale_uses_the_batch_with_the_nearest_expiry_first(): void
     {
         $this->authenticatedUser();

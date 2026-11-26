@@ -2,6 +2,22 @@
   align-items: flex-end;
 }
 
+.opening-balances-page { max-width: 980px; }
+.opening-balance-note { display:flex; gap:12px; align-items:flex-start; border-radius:16px; background:#f1f0fc; color:#373b55; padding:16px 18px; line-height:1.55; font-size:.86rem; }
+.opening-balance-note i { color:#5348d8; font-size:20px; margin-top:1px; }
+.opening-balance-section { overflow:hidden; padding:0; }
+.opening-section-heading { padding:18px 18px 11px; }
+.opening-section-heading .eyebrow { color:#6158c8; }
+.opening-section-heading p { margin:4px 0 0; color:#737a8c; font-size:.78rem; }
+.opening-balance-row { display:grid; grid-template-columns:minmax(0,1fr) 145px 80px; gap:9px; align-items:center; border-top:1px solid #eeeef4; padding:12px 18px; }
+.opening-balance-row strong { display:block; color:#30334b; font-size:.86rem; font-weight:650; }
+.opening-balance-row small { display:block; color:#858b9b; font-size:.7rem; margin-top:2px; }
+.opening-balance-row input, .opening-balance-row select { height:38px; border:1px solid #dcdbe8; border-radius:20px; background:#fff; color:#35384d; padding:0 12px; font-size:.8rem; text-align:right; }
+.opening-balance-row select { text-align:left; }
+.opening-balance-footer { position:sticky; bottom:0; display:flex; align-items:center; gap:24px; flex-wrap:wrap; border:1px solid #e7e6f0; border-radius:16px; background:rgba(255,255,255,.97); box-shadow:0 -8px 22px rgba(44,43,76,.06); padding:13px 16px; color:#62687a; font-size:.78rem; }
+.opening-balance-footer button { margin-left:auto; }
+@media (max-width: 650px) { .opening-balance-row { grid-template-columns:minmax(0,1fr) 105px 65px; padding:11px 12px; } .opening-balance-note { font-size:.8rem; } .opening-balance-footer { gap:12px; } .opening-balance-footer button { width:100%; margin-left:0; } }
+
 .accounting-heading-actions,
 .accounting-filter-row,
 .accounting-date-filters {
@@ -9,6 +25,19 @@
   align-items: flex-end;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.accounting-accounts-toolbar .accounting-date-filters {
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.accounting-accounts-toolbar .compact-field {
+  min-width: 155px;
+}
+
+.accounting-accounts-toolbar .compact-field select {
+  width: 100%;
 }
 
 .accounting-filter-row {
@@ -433,6 +462,19 @@
 
 .accounting-accounts-toolbar .search-box {
   min-width: 220px;
+}
+
+.accounting-account-actions {
+  display: flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.accounting-required-note {
+  display: block;
+  margin-top: 3px;
+  color: #858da0;
+  font-size: 0.7rem;
 }
 
 .accounting-import-layout {

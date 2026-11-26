@@ -1,25 +1,30 @@
 <?php
 
-use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ActivityController;
+use App\Http\Controllers\Api\AiAccountantController;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankingController;
 use App\Http\Controllers\Api\BusinessController;
 use App\Http\Controllers\Api\CashTallyController;
 use App\Http\Controllers\Api\ChartAccountsController;
 use App\Http\Controllers\Api\CustomerController;
-use App\Http\Controllers\Api\DataImportController;
 use App\Http\Controllers\Api\DashboardController;
+use App\Http\Controllers\Api\DataImportController;
 use App\Http\Controllers\Api\ExpenseController;
 use App\Http\Controllers\Api\GstReportController;
 use App\Http\Controllers\Api\InventoryController;
 use App\Http\Controllers\Api\InvoiceController;
 use App\Http\Controllers\Api\JournalController;
 use App\Http\Controllers\Api\MonthEndCloseController;
+use App\Http\Controllers\Api\OpeningBalanceController;
 use App\Http\Controllers\Api\PurchaseController;
 use App\Http\Controllers\Api\ReturnNoteController;
+use App\Http\Controllers\Api\ReportsController;
 use App\Http\Controllers\Api\SaleController;
 use App\Http\Controllers\Api\ScanBillController;
+use App\Http\Controllers\Api\SettingsController;
 use App\Http\Controllers\Api\SupplierController;
+use App\Http\Controllers\Api\SupportRequestController;
 use App\Http\Middleware\EnsureActiveBusiness;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +36,8 @@ Route::post('/login', [AuthController::class, 'login']);
 // Protected routes (Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
+    Route::patch('/account/profile', [AuthController::class, 'updateProfile']);
+    Route::patch('/account/password', [AuthController::class, 'updatePassword']);
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/businesses', [BusinessController::class, 'index']);
     Route::post('/businesses', [BusinessController::class, 'store']);
@@ -38,9 +45,29 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::middleware(EnsureActiveBusiness::class)->group(function () {
         Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+        Route::get('/dashboard/today-net-sales', [DashboardController::class, 'todayNetSales']);
+        Route::get('/dashboard/recent-transactions', [DashboardController::class, 'recentTransactions']);
+        Route::get('/ai-accountant/settings', [AiAccountantController::class, 'settings']);
+        Route::get('/ai-accountant/conversations', [AiAccountantController::class, 'conversations']);
+        Route::get('/ai-accountant/conversations/{conversation}', [AiAccountantController::class, 'conversation']);
+        Route::delete('/ai-accountant/conversations/{conversation}', [AiAccountantController::class, 'deleteConversation']);
+        Route::post('/ai-accountant/chat', [AiAccountantController::class, 'chat']);
+        Route::post('/ai-accountant/confirm', [AiAccountantController::class, 'confirm']);
+        Route::get('/reports/{report}', [ReportsController::class, 'show']);
+        Route::get('/support-requests', [SupportRequestController::class, 'index']);
+        Route::post('/support-requests', [SupportRequestController::class, 'store']);
+        Route::patch('/businesses/active/profile', [SettingsController::class, 'updateBusiness']);
+        Route::get('/notification-preferences', [SettingsController::class, 'notificationPreferences']);
+        Route::put('/notification-preferences', [SettingsController::class, 'updateNotificationPreferences']);
+        Route::get('/notifications', [SettingsController::class, 'notifications']);
+        Route::post('/notifications/read', [SettingsController::class, 'markNotificationRead']);
+        Route::post('/notifications/read-all', [SettingsController::class, 'markAllNotificationsRead']);
         Route::apiResource('customers', CustomerController::class);
+        Route::get('/customers/{customer}/ledger', [CustomerController::class, 'ledger']);
         Route::apiResource('sales', SaleController::class);
         Route::apiResource('suppliers', SupplierController::class);
+        Route::get('/purchases/{purchase}/items', [PurchaseController::class, 'items']);
+        Route::post('/purchases/{purchase}/items', [PurchaseController::class, 'storeItem']);
         Route::apiResource('purchases', PurchaseController::class);
         Route::apiResource('expenses', ExpenseController::class);
         Route::get('/inventory/products', [InventoryController::class, 'index']);
@@ -55,6 +82,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/inventory/expiring', [InventoryController::class, 'expiring']);
         Route::get('/banking/accounts', [BankingController::class, 'index']);
         Route::post('/banking/accounts', [BankingController::class, 'store']);
+        Route::patch('/banking/accounts/{account}', [BankingController::class, 'update']);
         Route::delete('/banking/accounts/{account}', [BankingController::class, 'destroy']);
         Route::post('/banking/accounts/{account}/statements', [BankingController::class, 'import']);
         Route::get('/banking/accounts/{account}/reconciliation', [BankingController::class, 'reconciliation']);
@@ -72,14 +100,22 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/journal-entries', [JournalController::class, 'index']);
         Route::post('/journal-entries', [JournalController::class, 'store']);
         Route::get('/chart-of-accounts', [ChartAccountsController::class, 'index']);
+        Route::get('/opening-balances', [OpeningBalanceController::class, 'show']);
+        Route::put('/opening-balances', [OpeningBalanceController::class, 'store']);
         Route::post('/chart-of-accounts', [ChartAccountsController::class, 'store']);
+        Route::patch('/chart-of-accounts/{accountCode}', [ChartAccountsController::class, 'update']);
+        Route::delete('/chart-of-accounts/{accountCode}', [ChartAccountsController::class, 'destroy']);
         Route::get('/imports', [DataImportController::class, 'index']);
         Route::post('/imports/{type}/preview', [DataImportController::class, 'preview']);
         Route::post('/imports/{dataImport}/commit', [DataImportController::class, 'commit']);
         Route::get('/credit-notes', [ReturnNoteController::class, 'creditNotes']);
         Route::post('/credit-notes', [ReturnNoteController::class, 'storeCredit']);
+        Route::put('/credit-notes/{note}', [ReturnNoteController::class, 'updateCredit']);
+        Route::delete('/credit-notes/{note}', [ReturnNoteController::class, 'destroyCredit']);
         Route::get('/debit-notes', [ReturnNoteController::class, 'debitNotes']);
         Route::post('/debit-notes', [ReturnNoteController::class, 'storeDebit']);
+        Route::put('/debit-notes/{note}', [ReturnNoteController::class, 'updateDebit']);
+        Route::delete('/debit-notes/{note}', [ReturnNoteController::class, 'destroyDebit']);
         Route::get('/scan-bills', [ScanBillController::class, 'index']);
         Route::post('/scan-bills', [ScanBillController::class, 'store']);
         Route::get('/scan-bills/{scanBill}', [ScanBillController::class, 'show']);

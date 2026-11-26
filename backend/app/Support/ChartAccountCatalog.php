@@ -3,9 +3,26 @@
 namespace App\Support;
 
 use App\Models\ChartAccount;
+use App\Models\ChartAccountOverride;
+use App\Models\JournalLine;
 
 class ChartAccountCatalog
 {
+    private const REQUIRED_ACCOUNT_CODES = [
+        'cash', 'bank', 'upi_clearing', 'card_clearing', 'accounts_receivable', 'inventory',
+        'input_gst', 'cash_difference', 'accounts_payable', 'gst_payable',
+        'reverse_charge_gst_payable', 'owners_capital', 'opening_balance_equity',
+        'sales_revenue', 'sales_returns', 'purchase_expense', 'purchase_returns',
+        'cost_of_goods_sold', 'purchase_return_adjustment', 'expense_rent',
+        'expense_electricity', 'expense_salary', 'expense_fuel', 'expense_transport',
+        'expense_internet', 'expense_office_expenses', 'expense_repairs',
+        'expense_advertising', 'expense_travel', 'expense_bank_charges',
+        'expense_miscellaneous', 'expense_insurance', 'expense_telephone',
+        'expense_maintenance', 'expense_professional_fees', 'expense_packaging',
+        'expense_taxes_licenses', 'expense_other', 'inventory_adjustment_gain',
+        'inventory_adjustment_loss',
+    ];
+
     private const SYSTEM_ACCOUNTS = [
         ['1000', 'cash', 'Cash', 'assets', 'Cash-in-Hand', 'debit'],
         ['1100', 'bank', 'Bank', 'assets', 'Bank Accounts', 'debit'],
@@ -15,8 +32,8 @@ class ChartAccountCatalog
         ['1300', 'inventory', 'Inventory', 'assets', 'Stock-in-Hand', 'debit'],
         ['1400', 'input_gst', 'Input GST', 'assets', 'Input GST', 'debit'],
         ['1430', 'itc_reversed', 'ITC Reversed (re-claimable)', 'assets', 'Input GST', 'debit'],
-        ['1450', 'cash_difference', 'Cash Difference (Suspense)', 'assets', 'Current Assets', 'debit'],
         ['1460', 'inter_branch_transfers', 'Inter-branch Transfers', 'assets', 'Current Assets', 'debit'],
+        ['1450', 'cash_difference', 'Cash Difference (Suspense)', 'assets', 'Current Assets', 'debit'],
         ['1500', 'fixed_assets', 'Fixed Assets', 'assets', 'Fixed Assets', 'debit'],
         ['2000', 'accounts_payable', 'Accounts Payable', 'liabilities', 'Sundry Creditors', 'credit'],
         ['2100', 'gst_payable', 'Output GST', 'liabilities', 'Duties & Taxes', 'credit'],
@@ -73,11 +90,45 @@ class ChartAccountCatalog
             'group_name' => $account[4],
             'normal_balance' => $account[5],
             'is_system' => true,
+            'is_required' => in_array($account[1], self::REQUIRED_ACCOUNT_CODES, true),
         ], self::SYSTEM_ACCOUNTS);
     }
 
     public static function forBusiness(int $businessId): array
     {
+        $overrides = ChartAccountOverride::query()
+            ->where('business_id', $businessId)
+            ->get()
+            ->keyBy('account_code');
+        $accountsWithHistory = JournalLine::query()
+            ->whereHas('journalEntry', fn ($query) => $query->where('business_id', $businessId))
+            ->distinct()
+            ->pluck('account_code')
+            ->all();
+        $system = collect(self::systemAccounts())
+            ->map(function (array $account) use ($overrides, $accountsWithHistory): array {
+                $override = $overrides->get($account['account_code']);
+                if ($override?->is_hidden) {
+                    return [];
+                }
+                if (! $account['is_required']
+                    && ! $override
+                    && ! in_array($account['account_code'], $accountsWithHistory, true)) {
+                    return [];
+                }
+                if ($override) {
+                    $account['name'] = $override->name ?? $account['name'];
+                    $account['group_name'] = $override->group_name ?? $account['group_name'];
+                }
+                $account['id'] = null;
+                $account['has_transactions'] = false;
+                $account['can_delete'] = ! $account['is_required'];
+
+                return $account;
+            })
+            ->filter()
+            ->values()
+            ->all();
         $custom = ChartAccount::query()
             ->where('business_id', $businessId)
             ->get()
@@ -90,9 +141,12 @@ class ChartAccountCatalog
                 'group_name' => $account->group_name,
                 'normal_balance' => in_array($account->account_type, ['assets', 'expenses'], true) ? 'debit' : 'credit',
                 'is_system' => false,
+                'is_required' => false,
+                'has_transactions' => false,
+                'can_delete' => true,
             ])->all();
 
-        $accounts = [...self::systemAccounts(), ...$custom];
+        $accounts = [...$system, ...$custom];
         usort($accounts, static fn (array $left, array $right): int => strnatcasecmp($left['display_code'], $right['display_code']));
 
         return $accounts;
@@ -101,7 +155,7 @@ class ChartAccountCatalog
     public static function resolve(string $identifier, int $businessId): ?array
     {
         $needle = trim($identifier);
-        foreach (self::systemAccounts() as $account) {
+        foreach (self::forBusiness($businessId) as $account) {
             if ($account['account_code'] === $needle
                 || $account['display_code'] === $needle
                 || strcasecmp($account['name'], $needle) === 0) {
@@ -131,6 +185,14 @@ class ChartAccountCatalog
             'group_name' => $custom->group_name,
             'normal_balance' => in_array($custom->account_type, ['assets', 'expenses'], true) ? 'debit' : 'credit',
             'is_system' => false,
+            'is_required' => false,
+            'has_transactions' => false,
+            'can_delete' => true,
         ];
+    }
+
+    public static function isRequiredSystemAccount(string $accountCode): bool
+    {
+        return in_array($accountCode, self::REQUIRED_ACCOUNT_CODES, true);
     }
 }

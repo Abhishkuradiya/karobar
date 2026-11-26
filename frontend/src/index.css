@@ -1,28 +1,39 @@
 /* Sneat Custom Overrides & Helpers */
-:root {
-  scrollbar-color: #b8bdcc transparent;
-  scrollbar-width: thin;
+html,
+body,
+* {
+  scrollbar-color: #aeb5c6 transparent !important;
+  scrollbar-width: thin !important;
 }
 
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
 *::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px !important;
+  height: 7px !important;
 }
 
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
 *::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-*::-webkit-scrollbar-thumb {
-  border: 2px solid transparent;
   border-radius: 999px;
-  background: #b8bdcc;
-  background-clip: padding-box;
+  background: transparent !important;
 }
 
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent !important;
+  border-radius: 999px !important;
+  background: #aeb5c6 !important;
+  background-clip: padding-box !important;
+}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
 *::-webkit-scrollbar-thumb:hover {
-  background: #9299ac;
-  background-clip: padding-box;
+  background: #838ca1 !important;
+  background-clip: padding-box !important;
 }
 
 .cursor-pointer {

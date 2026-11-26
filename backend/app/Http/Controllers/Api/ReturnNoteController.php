@@ -45,6 +45,26 @@ class ReturnNoteController extends Controller
         return $this->store($request, 'debit');
     }
 
+    public function updateCredit(Request $request, int $note): JsonResponse
+    {
+        return $this->store($request, 'credit', $note);
+    }
+
+    public function updateDebit(Request $request, int $note): JsonResponse
+    {
+        return $this->store($request, 'debit', $note);
+    }
+
+    public function destroyCredit(Request $request, int $note): JsonResponse
+    {
+        return $this->destroy($request, 'credit', $note);
+    }
+
+    public function destroyDebit(Request $request, int $note): JsonResponse
+    {
+        return $this->destroy($request, 'debit', $note);
+    }
+
     private function index(Request $request, string $type): JsonResponse
     {
         $validated = $request->validate([
@@ -61,7 +81,7 @@ class ReturnNoteController extends Controller
             ->where('note_type', $type)
             ->when($validated['from'] ?? null, fn (Builder $query, string $date) => $query->whereDate('note_date', '>=', $date))
             ->when($validated['to'] ?? null, fn (Builder $query, string $date) => $query->whereDate('note_date', '<=', $date))
-            ->with(['items', 'sale:id,invoice_number', 'purchase:id,purchase_number']);
+            ->with(['items', 'sale:id,invoice_number', 'purchase:id,purchase_number', 'currentJournalEntry.lines']);
         $notes = $query->orderByDesc('note_date')->orderByDesc('id')->get();
 
         return response()->json([
@@ -73,7 +93,7 @@ class ReturnNoteController extends Controller
         ]);
     }
 
-    private function store(Request $request, string $type): JsonResponse
+    private function store(Request $request, string $type, ?int $existingNoteId = null): JsonResponse
     {
         $user = $request->user();
         $businessId = $user->activeBusiness->id;
@@ -97,10 +117,43 @@ class ReturnNoteController extends Controller
             'items.*.quantity' => ['required', 'numeric', 'gt:0', 'max:999999999.999', 'decimal:0,3'],
         ]);
 
-        $note = DB::transaction(function () use ($validated, $type, $user, $businessId): ReturnNote {
-            $source = $type === 'credit'
-                ? Sale::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($validated['sale_id'])
-                : Purchase::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($validated['purchase_id']);
+        $note = DB::transaction(function () use ($validated, $type, $user, $businessId, $existingNoteId): ReturnNote {
+            $existingNote = null;
+            $existingItems = collect();
+            $preserveInventory = false;
+            if ($existingNoteId) {
+                $existingNote = ReturnNote::query()
+                    ->where('user_id', $user->id)
+                    ->where('business_id', $businessId)
+                    ->where('note_type', $type)
+                    ->with('items')
+                    ->lockForUpdate()
+                    ->findOrFail($existingNoteId);
+                $sourceId = $type === 'credit' ? $existingNote->sale_id : $existingNote->purchase_id;
+                $requestedSourceId = $type === 'credit' ? $validated['sale_id'] : $validated['purchase_id'];
+                if ((int) $requestedSourceId !== (int) $sourceId) {
+                    throw ValidationException::withMessages([
+                        $type === 'credit' ? 'sale_id' : 'purchase_id' => ['A return note must remain linked to its original transaction.'],
+                    ]);
+                }
+                $source = $type === 'credit'
+                    ? Sale::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($sourceId)
+                    : Purchase::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($sourceId);
+                $itemColumn = $type === 'credit' ? 'original_sale_item_id' : 'original_purchase_item_id';
+                $existingItems = $existingNote->items->keyBy($itemColumn);
+                $preserveInventory = $this->sameReturnedQuantities($existingNote, $type, $validated['items']);
+                $this->reverseCurrentJournal($existingNote);
+                if (! $preserveInventory) {
+                    app(InventoryService::class)->reverseReturnNote($existingNote);
+                }
+                if ($existingNote->settlement_method === 'credit') {
+                    $source->update(['balance_due' => round((float) $source->balance_due + (float) $existingNote->total, 2)]);
+                }
+            } else {
+                $source = $type === 'credit'
+                    ? Sale::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($validated['sale_id'])
+                    : Purchase::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($validated['purchase_id']);
+            }
 
             if ($type === 'debit' && $source->reverse_charge) {
                 throw ValidationException::withMessages([
@@ -128,7 +181,7 @@ class ReturnNoteController extends Controller
                 $original = $type === 'credit'
                     ? SaleItem::query()->where('sale_id', $source->id)->lockForUpdate()->findOrFail($line['item_id'])
                     : PurchaseItem::query()->where('purchase_id', $source->id)->lockForUpdate()->findOrFail($line['item_id']);
-                $returned = $this->previouslyReturned($type, $original->id);
+                $returned = $this->previouslyReturned($type, $original->id, $existingNoteId);
                 $remaining = round((float) $original->quantity - $returned['quantity'], 3);
                 $quantity = (float) $line['quantity'];
                 if ($quantity > $remaining) {
@@ -178,13 +231,7 @@ class ReturnNoteController extends Controller
                 ]);
             }
 
-            $note = ReturnNote::create([
-                'user_id' => $user->id,
-                'business_id' => $businessId,
-                'sale_id' => $type === 'credit' ? $source->id : null,
-                'purchase_id' => $type === 'debit' ? $source->id : null,
-                'note_type' => $type,
-                'note_number' => 'TMP-'.Str::uuid(),
+            $noteAttributes = [
                 'counterparty_name_snapshot' => $type === 'credit'
                     ? $source->customer_name_snapshot
                     : $source->supplier_name_snapshot,
@@ -194,20 +241,37 @@ class ReturnNoteController extends Controller
                 'taxable_amount' => $taxableTotal,
                 'tax_amount' => $taxTotal,
                 'total' => $noteTotal,
-            ]);
-            $note->update([
-                'note_number' => sprintf(
+            ];
+            if ($existingNote) {
+                $note = $existingNote;
+                $note->items()->delete();
+                $note->update($noteAttributes);
+            } else {
+                $note = ReturnNote::create([
+                    'user_id' => $user->id,
+                    'business_id' => $businessId,
+                    'sale_id' => $type === 'credit' ? $source->id : null,
+                    'purchase_id' => $type === 'debit' ? $source->id : null,
+                    'note_type' => $type,
+                    'note_number' => 'TMP-'.Str::uuid(),
+                    ...$noteAttributes,
+                ]);
+                $note->update([
+                    'note_number' => sprintf(
                     '%s-%s-%06d',
                     $type === 'credit' ? 'CN' : 'DN',
                     str_replace('-', '', $validated['note_date']),
                     $note->id
-                ),
-            ]);
+                    ),
+                ]);
+            }
 
             foreach ($items as $item) {
                 $original = $item['_original'];
                 unset($item['_original']);
-                if ($type === 'credit' && $original->product && $original->product->track_stock
+                if ($preserveInventory) {
+                    $item['inventory_cost'] = (float) ($existingItems->get($original->id)?->inventory_cost ?? 0);
+                } elseif ($type === 'credit' && $original->product && $original->product->track_stock
                     && InventoryMovement::query()->where('source_type', 'sale')->where('source_id', $source->id)
                         ->where('sale_item_id', $original->id)->exists()) {
                     $item['inventory_cost'] = app(InventoryService::class)
@@ -226,13 +290,94 @@ class ReturnNoteController extends Controller
             }
             $this->postJournal($note, $source, $validated['bank_account_id'] ?? null);
 
-            return $note->fresh(['items', 'sale', 'purchase']);
+            return $note->fresh(['items', 'sale', 'purchase', 'currentJournalEntry.lines']);
         }, 3);
 
-        return response()->json($note, 201);
+        return response()->json($note, $existingNoteId ? 200 : 201);
     }
 
-    private function previouslyReturned(string $type, int $originalItemId): array
+    private function destroy(Request $request, string $type, int $noteId): JsonResponse
+    {
+        $user = $request->user();
+        $businessId = $user->activeBusiness->id;
+
+        DB::transaction(function () use ($user, $businessId, $type, $noteId): void {
+            $note = ReturnNote::query()
+                ->where('user_id', $user->id)
+                ->where('business_id', $businessId)
+                ->where('note_type', $type)
+                ->with('items')
+                ->lockForUpdate()
+                ->findOrFail($noteId);
+            $source = $type === 'credit'
+                ? Sale::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($note->sale_id)
+                : Purchase::query()->where('user_id', $user->id)->where('business_id', $businessId)->lockForUpdate()->findOrFail($note->purchase_id);
+
+            $this->reverseCurrentJournal($note);
+            app(InventoryService::class)->reverseReturnNote($note);
+            if ($note->settlement_method === 'credit') {
+                $source->update(['balance_due' => round((float) $source->balance_due + (float) $note->total, 2)]);
+            }
+            $note->delete();
+        }, 3);
+
+        return response()->json(['message' => 'The return note was deleted and its effects were reversed.']);
+    }
+
+    private function sameReturnedQuantities(ReturnNote $note, string $type, array $newItems): bool
+    {
+        $column = $type === 'credit' ? 'original_sale_item_id' : 'original_purchase_item_id';
+        $existing = [];
+        foreach ($note->items as $item) {
+            $existing[$item->{$column}] = number_format((float) $item->quantity, 3, '.', '');
+        }
+        $updated = [];
+        foreach ($newItems as $item) {
+            $updated[$item['item_id']] = number_format((float) $item['quantity'], 3, '.', '');
+        }
+        ksort($existing);
+        ksort($updated);
+
+        return $existing === $updated;
+    }
+
+    private function reverseCurrentJournal(ReturnNote $note): void
+    {
+        if (! $note->current_journal_entry_id) {
+            return;
+        }
+
+        $original = JournalEntry::query()
+            ->where('user_id', $note->user_id)
+            ->where('business_id', $note->business_id)
+            ->with('lines')
+            ->lockForUpdate()
+            ->findOrFail($note->current_journal_entry_id);
+        $reversal = JournalEntry::create([
+            'user_id' => $note->user_id,
+            'business_id' => $note->business_id,
+            'entry_date' => now()->toDateString(),
+            'source_type' => $note->note_type.'_note_reversal',
+            'source_id' => $note->id,
+            'description' => "Reversal of return note {$note->note_number}",
+            'reversal_of_id' => $original->id,
+        ]);
+        $reversal->lines()->createMany(
+            $original->lines->map(fn ($line): array => [
+                'account_code' => $line->account_code,
+                'bank_account_id' => $line->bank_account_id,
+                'debit' => $line->credit,
+                'credit' => $line->debit,
+            ])->all()
+        );
+        $totals = $reversal->lines()->selectRaw('SUM(debit) as debits, SUM(credit) as credits')->first();
+        if ((int) round((float) $totals->debits * 100) !== (int) round((float) $totals->credits * 100)) {
+            throw new LogicException('Return note reversal journal entry must balance.');
+        }
+        $note->update(['current_journal_entry_id' => null]);
+    }
+
+    private function previouslyReturned(string $type, int $originalItemId, ?int $ignoreNoteId = null): array
     {
         $column = $type === 'credit' ? 'original_sale_item_id' : 'original_purchase_item_id';
 
@@ -241,6 +386,7 @@ class ReturnNoteController extends Controller
             ->where("return_note_items.{$column}", $originalItemId)
             ->where('return_notes.note_type', $type)
             ->whereNull('return_notes.deleted_at')
+            ->when($ignoreNoteId, fn (QueryBuilder $query) => $query->where('return_notes.id', '!=', $ignoreNoteId))
             ->selectRaw(
                 'COALESCE(SUM(return_note_items.quantity), 0) as quantity, '.
                 'COALESCE(SUM(return_note_items.taxable_amount), 0) as taxable_amount, '.

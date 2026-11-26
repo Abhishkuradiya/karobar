@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\Business;
 use App\Models\JournalEntry;
+use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -138,6 +139,88 @@ class PurchaseApiTest extends TestCase
         ]);
         $this->assertSame(2, JournalEntry::query()->where('source_type', 'purchase')->count());
         $this->assertSame(2, JournalEntry::query()->where('source_type', 'purchase_reversal')->count());
+    }
+
+    public function test_purchase_items_can_be_added_and_fetched_separately_and_all_entries_reverse_on_void(): void
+    {
+        $user = $this->authenticatedUser();
+        $productResponse = $this->postJson('/api/inventory/products', [
+            'name' => 'Packaging materials',
+            'sku' => 'PACK-ADD-01',
+            'unit_code' => 'pcs',
+            'gst_rate' => 5,
+            'purchase_price' => 50,
+            'selling_price' => 70,
+            'track_stock' => true,
+            'is_service' => false,
+            'batch_tracking' => true,
+            'low_stock_threshold' => 1,
+            'opening_quantity' => 0,
+            'opening_unit_cost' => 0,
+        ])->assertCreated()->json();
+        $purchase = $this->postJson('/api/purchases', $this->purchasePayload())
+            ->assertCreated()
+            ->json();
+
+        $added = $this->postJson("/api/purchases/{$purchase['id']}/items", [
+            'product_id' => $productResponse['id'],
+            'description' => 'Packaging materials',
+            'quantity' => 2,
+            'unit_rate' => 50,
+            'gst_rate' => 5,
+            'discount' => 5,
+            'hsn_sac' => '4819',
+            'batch_number' => 'PACK-01',
+            'expiry_date' => null,
+        ])->assertCreated()
+            ->assertJsonPath('purchase.total', '217.75')
+            ->assertJsonPath('item.description', 'Packaging materials')
+            ->assertJsonPath('item.taxable_amount', '95.00')
+            ->assertJsonPath('item.tax_amount', '4.75')
+            ->assertJsonPath('item.line_total', '99.75')
+            ->json();
+
+        $this->getJson("/api/purchases/{$purchase['id']}/items")
+            ->assertOk()
+            ->assertJsonPath('purchase_id', $purchase['id'])
+            ->assertJsonPath('meta.total', 2)
+            ->assertJsonPath('data.1.id', $added['item']['id']);
+
+        $additionEntryId = JournalEntry::query()
+            ->where('source_type', 'purchase_item_addition')
+            ->where('source_id', $purchase['id'])
+            ->value('id');
+        $this->assertNotNull($additionEntryId);
+        $this->assertDatabaseHas('journal_lines', [
+            'journal_entry_id' => $additionEntryId,
+            'account_code' => 'inventory',
+            'debit' => '95.00',
+        ]);
+        $this->assertSame(2.0, (float) Product::findOrFail($productResponse['id'])->current_stock);
+        $this->deleteJson("/api/purchases/{$purchase['id']}")->assertNoContent();
+        $this->assertSame(2, JournalEntry::query()->where('source_type', 'purchase_reversal')->count());
+    }
+
+    public function test_purchase_item_endpoints_only_access_purchases_in_the_active_business(): void
+    {
+        $user = $this->authenticatedUser();
+        $purchase = $this->postJson('/api/purchases', $this->purchasePayload())
+            ->assertCreated()
+            ->json();
+        $originalBusinessId = $user->active_business_id;
+        $otherBusiness = $this->createBusiness($user);
+
+        $user->forceFill(['active_business_id' => $originalBusinessId])->save();
+        $this->getJson("/api/purchases/{$purchase['id']}/items")->assertOk()->assertJsonPath('meta.total', 1);
+        $user->forceFill(['active_business_id' => $otherBusiness->id])->save();
+        $this->getJson("/api/purchases/{$purchase['id']}/items")->assertNotFound();
+        $this->postJson("/api/purchases/{$purchase['id']}/items", [
+            'description' => 'Should not be added',
+            'quantity' => 1,
+            'unit_rate' => 10,
+            'gst_rate' => 0,
+            'discount' => 0,
+        ])->assertNotFound();
     }
 
     public function test_credit_requires_supplier_and_rcm_requires_exclusive_pricing(): void

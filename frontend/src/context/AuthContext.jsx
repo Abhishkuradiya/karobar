@@ -132,6 +132,24 @@ export function AuthProvider({ children }) {
     return business;
   };
 
+  const updateBusinessProfile = async (profile) => {
+    const response = await api.patch('/businesses/active/profile', profile);
+    const business = response.data.business;
+    setActiveBusiness(business);
+    setBusinesses((current) => current.map((item) => item.id === business.id ? business : item));
+
+    return business;
+  };
+
+  const updateProfile = async (profile) => {
+    const response = await api.patch('/account/profile', profile);
+    const updatedUser = response.data.user;
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+
+    return updatedUser;
+  };
+
   const logout = async () => {
     try {
       if (token) {
@@ -162,6 +180,8 @@ export function AuthProvider({ children }) {
     register,
     createBusiness,
     selectBusiness,
+    updateBusinessProfile,
+    updateProfile,
     refreshBusinesses,
     logout,
   };

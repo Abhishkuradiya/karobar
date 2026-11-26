@@ -32,13 +32,7 @@ class BankingController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'bank_name' => ['required', 'string', 'max:100'],
-            'account_number' => ['nullable', 'string', 'min:4', 'max:40'],
-            'ifsc' => ['nullable', 'string', 'max:11', 'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/'],
-            'upi_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$/'],
-        ]);
+        $validated = $request->validate($this->rules());
         $user = $request->user();
         $account = BankAccount::create([
             'user_id' => $user->id,
@@ -53,6 +47,23 @@ class BankingController extends Controller
         ]);
 
         return response()->json($account, 201);
+    }
+
+    public function update(Request $request, int $account): JsonResponse
+    {
+        $record = $this->ownedAccount($request, $account);
+        $validated = $request->validate($this->rules());
+        $record->update([
+            'name' => trim($validated['name']),
+            'bank_name' => trim($validated['bank_name']),
+            'account_last4' => isset($validated['account_number'])
+                ? substr(preg_replace('/\s+/', '', $validated['account_number']), -4)
+                : $record->account_last4,
+            'ifsc' => isset($validated['ifsc']) ? strtoupper($validated['ifsc']) : null,
+            'upi_id' => $validated['upi_id'] ?? null,
+        ]);
+
+        return response()->json($record->fresh());
     }
 
     public function destroy(Request $request, int $account): JsonResponse
@@ -410,5 +421,16 @@ class BankingController extends Controller
             ->where('business_id', $request->user()->activeBusiness->id)
             ->where('is_active', true)
             ->findOrFail($id);
+    }
+
+    private function rules(): array
+    {
+        return [
+            'name' => ['required', 'string', 'max:100'],
+            'bank_name' => ['required', 'string', 'max:100'],
+            'account_number' => ['nullable', 'string', 'min:4', 'max:40'],
+            'ifsc' => ['nullable', 'string', 'max:11', 'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/'],
+            'upi_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$/'],
+        ];
     }
 }

@@ -136,6 +136,101 @@ class PurchaseController extends Controller
         );
     }
 
+    public function items(Request $request, int $purchase): JsonResponse
+    {
+        $record = $this->ownedPurchase($request, $purchase);
+        $items = $record->items()->orderBy('id')->paginate(50)->withQueryString();
+
+        return response()->json([
+            'purchase_id' => $record->id,
+            'data' => $items->items(),
+            'meta' => [
+                'current_page' => $items->currentPage(),
+                'last_page' => $items->lastPage(),
+                'per_page' => $items->perPage(),
+                'total' => $items->total(),
+            ],
+        ]);
+    }
+
+    public function storeItem(Request $request, int $purchase): JsonResponse
+    {
+        $user = $request->user();
+        $businessId = $user->activeBusiness->id;
+        $record = $this->ownedPurchase($request, $purchase);
+        $this->assertNoReturnNotes($businessId, $record->id);
+        $validated = $request->validate([
+            'product_id' => [
+                'nullable',
+                'integer',
+                Rule::exists('products', 'id')->where(fn (QueryBuilder $query) => $query
+                    ->where('user_id', $user->id)
+                    ->where('business_id', $businessId)
+                    ->whereNull('deleted_at')),
+            ],
+            'description' => ['required', 'string', 'max:255'],
+            'quantity' => ['required', 'numeric', 'gt:0', 'max:999999999.999', 'decimal:0,3'],
+            'unit_rate' => ['required', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
+            'gst_rate' => ['required', 'numeric', 'min:0', 'max:100', 'decimal:0,2'],
+            'discount' => ['required', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
+            'hsn_sac' => ['nullable', 'string', 'max:20'],
+            'batch_number' => ['nullable', 'string', 'max:80'],
+            'expiry_date' => ['nullable', 'date_format:Y-m-d'],
+        ]);
+        if (! empty($validated['expiry_date']) && $validated['expiry_date'] < $record->purchase_date->format('Y-m-d')) {
+            throw ValidationException::withMessages([
+                'expiry_date' => ['The expiry date must be on or after the purchase date.'],
+            ]);
+        }
+        $gross = round((float) $validated['quantity'] * (float) $validated['unit_rate'], 2);
+        if ((float) $validated['discount'] > $gross) {
+            throw ValidationException::withMessages([
+                'discount' => ['The discount cannot be greater than the item amount.'],
+            ]);
+        }
+
+        $updated = DB::transaction(function () use ($request, $user, $businessId, $purchase, $validated): array {
+            $record = Purchase::query()
+                ->where('user_id', $user->id)
+                ->where('business_id', $businessId)
+                ->lockForUpdate()
+                ->findOrFail($purchase);
+            $this->assertNoReturnNotes($businessId, $record->id);
+            $itemInputs = $record->items()->orderBy('id')->get()->map(static fn ($item): array => [
+                'product_id' => $item->product_id,
+                'description' => $item->description,
+                'quantity' => $item->quantity,
+                'unit_rate' => $item->unit_rate,
+                'gst_rate' => $item->gst_rate,
+                'discount' => $item->discount,
+                'hsn_sac' => $item->hsn_sac,
+                'batch_number' => $item->batch_number,
+                'expiry_date' => $item->expiry_date?->format('Y-m-d'),
+            ])->all();
+            $itemInputs[] = $validated;
+            $calculated = $this->calculate([
+                'items' => $itemInputs,
+                'prices_include_gst' => $record->prices_include_gst,
+                'claim_input_tax_credit' => $record->claim_input_tax_credit,
+                'reverse_charge' => $record->reverse_charge,
+                'payment_method' => $record->payment_method,
+            ]);
+            $newItemData = array_pop($calculated['items']);
+            $item = $record->items()->create($newItemData);
+            app(InventoryService::class)->receivePurchaseItem($record, $item->load('product'));
+            $record->update($calculated['totals']);
+            $entry = $this->postAddedItemJournal($record->fresh(), $item);
+            $record->update(['current_journal_entry_id' => $entry->id]);
+
+            return [
+                'purchase' => $record->fresh(['supplier']),
+                'item' => $item->fresh(),
+            ];
+        }, 3);
+
+        return response()->json($updated, 201);
+    }
+
     public function update(Request $request, int $purchase): JsonResponse
     {
         $this->ownedPurchase($request, $purchase);
@@ -476,36 +571,91 @@ class PurchaseController extends Controller
 
     private function reverseCurrentJournal(Purchase $purchase): void
     {
-        if (! $purchase->current_journal_entry_id) {
-            return;
-        }
-
-        $original = JournalEntry::query()
+        $alreadyReversed = JournalEntry::query()
+            ->whereNotNull('reversal_of_id')
+            ->select('reversal_of_id');
+        $entries = JournalEntry::query()
             ->where('user_id', $purchase->user_id)
             ->where('business_id', $purchase->business_id)
+            ->where('source_id', $purchase->id)
+            ->whereIn('source_type', ['purchase', 'purchase_item_addition'])
+            ->whereNotIn('id', $alreadyReversed)
             ->with('lines')
-            ->findOrFail($purchase->current_journal_entry_id);
+            ->lockForUpdate()
+            ->get();
 
-        $reversal = JournalEntry::create([
+        foreach ($entries as $original) {
+            $reversal = JournalEntry::create([
+                'user_id' => $purchase->user_id,
+                'business_id' => $purchase->business_id,
+                'entry_date' => now()->toDateString(),
+                'source_type' => 'purchase_reversal',
+                'source_id' => $purchase->id,
+                'description' => "Reversal of purchase entry {$original->id} for {$purchase->purchase_number}",
+                'reversal_of_id' => $original->id,
+            ]);
+
+            $reversal->lines()->createMany(
+                $original->lines->map(fn ($line): array => [
+                    'account_code' => $line->account_code,
+                    'bank_account_id' => $line->bank_account_id,
+                    'debit' => $line->credit,
+                    'credit' => $line->debit,
+                ])->all()
+            );
+            $this->assertJournalBalances($reversal);
+        }
+
+        $purchase->update(['current_journal_entry_id' => null]);
+    }
+
+    private function postAddedItemJournal(Purchase $purchase, \App\Models\PurchaseItem $item): JournalEntry
+    {
+        $creditAccount = match ($purchase->payment_method) {
+            'cash' => 'cash',
+            'upi' => 'upi_clearing',
+            'card' => 'card_clearing',
+            'bank' => 'bank',
+            'credit' => 'accounts_payable',
+        };
+        $product = $item->product;
+        $isStockItem = $product && $product->track_stock && ! $product->is_service;
+        $itemAmount = $purchase->claim_input_tax_credit
+            ? (float) $item->taxable_amount
+            : (float) $item->line_total;
+        $supplierAmount = $purchase->reverse_charge
+            ? (float) $item->taxable_amount
+            : (float) $item->line_total;
+        $entry = JournalEntry::create([
             'user_id' => $purchase->user_id,
             'business_id' => $purchase->business_id,
-            'entry_date' => now()->toDateString(),
-            'source_type' => 'purchase_reversal',
+            'entry_date' => $purchase->purchase_date,
+            'source_type' => 'purchase_item_addition',
             'source_id' => $purchase->id,
-            'description' => "Reversal of purchase {$purchase->purchase_number}",
-            'reversal_of_id' => $original->id,
+            'description' => "Additional item for purchase {$purchase->purchase_number}: {$item->description}",
         ]);
+        $lines = [[
+            'account_code' => $creditAccount,
+            'bank_account_id' => $purchase->payment_method === 'bank' ? $purchase->bank_account_id : null,
+            'debit' => 0,
+            'credit' => $supplierAmount,
+        ], [
+            'account_code' => $isStockItem ? 'inventory' : 'purchase_expense',
+            'debit' => $itemAmount,
+            'credit' => 0,
+        ]];
 
-        $reversal->lines()->createMany(
-            $original->lines->map(fn ($line): array => [
-                'account_code' => $line->account_code,
-                'bank_account_id' => $line->bank_account_id,
-                'debit' => $line->credit,
-                'credit' => $line->debit,
-            ])->all()
-        );
-        $this->assertJournalBalances($reversal);
-        $purchase->update(['current_journal_entry_id' => null]);
+        if ($purchase->claim_input_tax_credit && (float) $item->tax_amount > 0) {
+            $lines[] = ['account_code' => 'input_gst', 'debit' => $item->tax_amount, 'credit' => 0];
+        }
+        if ($purchase->reverse_charge && (float) $item->tax_amount > 0) {
+            $lines[] = ['account_code' => 'reverse_charge_gst_payable', 'debit' => 0, 'credit' => $item->tax_amount];
+        }
+
+        $entry->lines()->createMany($lines);
+        $this->assertJournalBalances($entry);
+
+        return $entry;
     }
 
     private function assertJournalBalances(JournalEntry $entry): void
