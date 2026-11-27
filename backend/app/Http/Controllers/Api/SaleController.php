@@ -106,11 +106,7 @@ class SaleController extends Controller
             ]);
 
             $sale->update([
-                'invoice_number' => sprintf(
-                    'SAL-%s-%06d',
-                    Carbon::parse($sale->sale_date)->format('Ymd'),
-                    $sale->id
-                ),
+                'invoice_number' => $this->invoiceNumber($sale),
             ]);
             $sale->items()->createMany($calculated['items']);
             app(InventoryService::class)->consumeSale($sale);
@@ -120,6 +116,11 @@ class SaleController extends Controller
         }, 3);
 
         return response()->json($sale, 201);
+    }
+
+    private function invoiceNumber(Sale $sale): string
+    {
+        return 'INV'.str_pad((string) $sale->id, 4, '0', STR_PAD_LEFT);
     }
 
     public function show(Request $request, int $sale): JsonResponse

@@ -35,7 +35,8 @@ class SaleApiTest extends TestCase
             ->assertJsonPath('tax_amount', '34.20')
             ->assertJsonPath('total', '224.20')
             ->assertJsonPath('amount_paid', '224.20')
-            ->assertJsonPath('balance_due', '0.00');
+            ->assertJsonPath('balance_due', '0.00')
+            ->assertJsonPath('invoice_number', 'INV0001');
 
         $entryId = $response->json('current_journal_entry_id');
         $this->assertDatabaseHas('journal_lines', [

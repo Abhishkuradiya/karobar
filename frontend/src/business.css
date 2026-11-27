@@ -2636,27 +2636,37 @@ textarea {
 
 .business-switcher-button {
   display: flex;
-  min-width: 150px;
+  min-width: 168px;
   max-width: min(320px, 42vw);
+  min-height: 52px;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
-  padding: 8px 11px;
+  gap: 16px;
+  padding: 8px 13px 8px 14px;
   color: #333247;
-  background: #f5f4fa;
-  border: 0;
-  border-radius: 22px;
+  background: linear-gradient(135deg, #faf9ff 0%, #f2f0ff 100%);
+  border: 1px solid #e8e5fa;
+  border-radius: 16px;
   text-align: left;
+  box-shadow: 0 3px 12px rgba(54, 45, 130, 0.06);
+  transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease;
 }
 
 .business-switcher-button:hover,
 .business-switcher-button[aria-expanded="true"] {
   background: #efedff;
+  border-color: #d7d1ff;
+  box-shadow: 0 8px 20px rgba(54, 45, 130, 0.12);
+}
+
+.business-switcher-button:active {
+  transform: translateY(1px);
 }
 
 .business-switcher-button > i {
   color: #77768a;
-  font-size: 16px;
+  flex: 0 0 auto;
+  font-size: 17px;
 }
 
 .business-switcher-copy,
@@ -2669,16 +2679,17 @@ textarea {
 .business-switcher-copy strong {
   overflow: hidden;
   color: #302f43;
-  font-size: 12px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 700;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .business-switcher-copy small {
-  margin-top: 1px;
+  margin-top: 3px;
   color: #77768a;
-  font-size: 10px;
+  font-size: 11px;
+  line-height: 1;
 }
 
 .business-switcher-menu {
@@ -3000,9 +3011,12 @@ textarea {
 
 @media (max-width: 640px) {
   .business-switcher-button {
-    min-width: 110px;
+    min-width: 132px;
     max-width: 40vw;
-    padding: 7px 9px;
+    min-height: 46px;
+    gap: 10px;
+    padding: 7px 10px 7px 11px;
+    border-radius: 14px;
   }
 
   .business-switcher-menu {
