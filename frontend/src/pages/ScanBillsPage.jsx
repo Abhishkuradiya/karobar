@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
+import { useFeedback } from '../context/FeedbackContext';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -12,6 +14,7 @@ function formatFileSize(size) {
 }
 
 export default function ScanBillsPage() {
+  const { confirm } = useFeedback();
   const navigate = useNavigate();
   const photoInput = useRef(null);
   const uploadInput = useRef(null);
@@ -111,7 +114,7 @@ export default function ScanBillsPage() {
     const message = bill.status === 'recorded'
       ? `Remove the uploaded file for ${bill.original_name}? Its expense record will remain.`
       : `Delete ${bill.original_name}? This permanently removes the uploaded file.`;
-    if (!window.confirm(message)) return;
+    if (!await confirm({ title: 'Delete scanned bill?', message, confirmLabel: 'Delete bill' })) return;
 
     setNotice('');
     setError('');
@@ -140,8 +143,8 @@ export default function ScanBillsPage() {
         </div>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <section className="scan-upload-card">
         <input ref={photoInput} className="sr-only" type="file" accept="image/jpeg,image/png" capture="environment" onChange={uploadFile} />

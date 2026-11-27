@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import SupplierFormDrawer from '../components/SupplierFormDrawer';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatMoney, getErrorMessage } from '../utils/format';
 
 const paymentMethods = [
@@ -259,7 +260,7 @@ export default function PurchaseFormPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <form className="sale-entry-layout" onSubmit={savePurchase}>
         <div className="sale-entry-main">
@@ -309,12 +310,12 @@ export default function PurchaseFormPage() {
 
             <div className="form-grid-two purchase-date-grid">
               <label className="field-label">
-                Date <span className="required-mark">*</span>
+                <span>Date <span className="required-mark">*</span></span>
                 <input type="date" name="purchase_date" value={form.purchase_date} onChange={updateField} required />
               </label>
               <label className="field-label">
                 Supplier bill no.
-                <input name="supplier_bill_number" value={form.supplier_bill_number} onChange={updateField} maxLength="60" placeholder="Optional" />
+                <input name="supplier_bill_number" value={form.supplier_bill_number} onChange={updateField} maxLength="60" placeholder="Supplier bill number" />
               </label>
               <label className="field-label">
                 Supplier bill date
@@ -383,7 +384,7 @@ export default function PurchaseFormPage() {
                       </select>
                     </label>
                     {item.product_id && products.find((product) => String(product.id) === item.product_id)?.batch_tracking && <>
-                      <label className="field-label">Batch number<input name="batch_number" value={item.batch_number} onChange={(event) => updateItem(index, event)} maxLength="80" placeholder="Optional" /></label>
+                      <label className="field-label">Batch number<input name="batch_number" value={item.batch_number} onChange={(event) => updateItem(index, event)} maxLength="80" placeholder="Batch number" /></label>
                       <label className="field-label">Expiry date<input type="date" name="expiry_date" value={item.expiry_date} onChange={(event) => updateItem(index, event)} /></label>
                     </>}
                     <label className="field-label">
@@ -392,7 +393,7 @@ export default function PurchaseFormPage() {
                     </label>
                     <label className="field-label">
                       HSN/SAC
-                      <input name="hsn_sac" value={item.hsn_sac} onChange={(event) => updateItem(index, event)} maxLength="20" placeholder="Optional" />
+                      <input name="hsn_sac" value={item.hsn_sac} onChange={(event) => updateItem(index, event)} maxLength="20" placeholder="HSN/SAC code" />
                     </label>
                   </div>
                   <div className="sale-item-total">
@@ -409,7 +410,7 @@ export default function PurchaseFormPage() {
           </section>
 
           <label className="field-label notes-field">
-            Notes <span className="optional-label">Optional</span>
+            Notes
             <textarea name="notes" value={form.notes} onChange={updateField} maxLength="2000" rows="2" placeholder="Add a note for your records" />
           </label>
 

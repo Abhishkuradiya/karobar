@@ -27,6 +27,11 @@ class SettingsController extends Controller
 
     public function updateBusiness(Request $request): JsonResponse
     {
+        foreach (['name', 'legal_name', 'state', 'city', 'address', 'postal_code', 'phone'] as $field) {
+            if (is_string($request->input($field))) {
+                $request->merge([$field => trim($request->input($field))]);
+            }
+        }
         if (is_string($request->input('gstin'))) {
             $request->merge(['gstin' => strtoupper(trim($request->input('gstin')))]);
         }
@@ -42,6 +47,7 @@ class SettingsController extends Controller
                 'string',
                 'size:15',
                 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/',
+                Rule::unique('businesses', 'gstin')->ignore($request->user()->activeBusiness->id),
             ],
             'gst_return_frequency' => [
                 'nullable',
@@ -55,7 +61,7 @@ class SettingsController extends Controller
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
             'postal_code' => ['nullable', 'string', 'max:12', 'regex:/^[0-9]{6}$/'],
-            'phone' => ['nullable', 'string', 'max:25'],
+            'phone' => ['nullable', 'string', 'max:25', 'regex:/^[0-9+()\-\s]{7,25}$/'],
         ]);
 
         $business = $request->user()->activeBusiness;

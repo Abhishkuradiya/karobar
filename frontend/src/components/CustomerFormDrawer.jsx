@@ -2,6 +2,7 @@ import { useState } from 'react';
 import api from '../api/axios';
 import { indiaStates } from '../utils/indiaStates';
 import { getErrorMessage } from '../utils/format';
+import MessageBanner from './MessageBanner';
 
 function createForm(customer) {
   return {
@@ -72,18 +73,18 @@ export default function CustomerFormDrawer({ customer, onClose, onSaved }) {
             </button>
           </div>
 
-          {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+          <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
           <div className="drawer-fields">
             <label className="field-label">
-              Name <span className="required-mark">*</span>
+              <span>Name <span className="required-mark">*</span></span>
               <input autoFocus name="name" value={form.name} onChange={updateField} maxLength="150" required placeholder="e.g. Sharma Traders" />
             </label>
 
             <div className="form-grid-two">
               <label className="field-label">
                 Mobile
-                <input name="mobile" type="tel" value={form.mobile} onChange={updateField} maxLength="30" placeholder="Mobile number" />
+                <input name="mobile" type="tel" inputMode="numeric" pattern="[0-9]{10}" value={form.mobile} onChange={updateField} maxLength="10" placeholder="10-digit mobile number" />
               </label>
               <label className="field-label">
                 Credit days
@@ -92,7 +93,7 @@ export default function CustomerFormDrawer({ customer, onClose, onSaved }) {
             </div>
 
             <label className="field-label">
-              Credit limit <span className="currency-label">₹</span>
+              <span>Credit limit <span className="currency-label">₹</span></span>
               <input name="credit_limit" type="number" min="0" step="0.01" value={form.credit_limit} onChange={updateField} placeholder="No limit" />
               <small>Credit sales above this limit will be declined.</small>
             </label>

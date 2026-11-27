@@ -211,9 +211,10 @@ class SaleController extends Controller
                     ->where('business_id', $request->user()->activeBusiness->id)
                     ->whereNull('deleted_at')),
             ],
-            'sale_date' => ['required', 'date_format:Y-m-d'],
+            'sale_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'payment_method' => ['required', Rule::in(self::PAYMENT_METHODS)],
             'bank_account_id' => [
+                'required_if:payment_method,bank',
                 'nullable',
                 'integer',
                 Rule::exists('bank_accounts', 'id')->where(fn (QueryBuilder $query) => $query

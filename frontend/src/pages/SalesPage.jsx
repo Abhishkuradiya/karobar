@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
+import { useFeedback } from '../context/FeedbackContext';
 
 const paymentLabels = {
   cash: 'Cash',
@@ -14,6 +16,7 @@ const paymentLabels = {
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 
 export default function SalesPage() {
+  const { confirm } = useFeedback();
   const location = useLocation();
   const [sales, setSales] = useState([]);
   const [meta, setMeta] = useState(emptyMeta);
@@ -86,7 +89,7 @@ export default function SalesPage() {
   };
 
   const voidSale = async (sale) => {
-    if (!window.confirm(`Void sale ${sale.invoice_number}? A reversing journal entry will be recorded.`)) return;
+    if (!await confirm({ title: 'Void this sale?', message: `${sale.invoice_number} will be reversed with a journal entry.`, confirmLabel: 'Void sale' })) return;
     setError('');
     setNotice('');
     try {
@@ -110,8 +113,8 @@ export default function SalesPage() {
         <Link className="btn btn-primary" to="/sales/new"><i className="bx bx-plus me-1" /> New sale</Link>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="summary-grid">
         <article className="summary-card">
@@ -166,7 +169,7 @@ export default function SalesPage() {
               <table className="business-table">
                 <thead>
                   <tr>
-                    <th>Sale</th>
+                    <th>S.No.</th><th>Sale</th>
                     <th>Date</th>
                     <th>Customer</th>
                     <th>Payment</th>
@@ -176,8 +179,9 @@ export default function SalesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {sales.map((sale) => (
+                  {sales.map((sale, index) => (
                     <tr key={sale.id}>
+                      <td>{(page - 1) * (meta.per_page || 15) + index + 1}</td>
                       <td>
                         <strong>{sale.invoice_number}</strong>
                         <small className="table-subtext">{sale.items.length} {sale.items.length === 1 ? 'item' : 'items'}</small>

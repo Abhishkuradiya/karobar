@@ -68,6 +68,38 @@ class SupplierApiTest extends TestCase
         ]))->assertUnprocessable()->assertJsonValidationErrors('credit_days');
     }
 
+    public function test_supplier_mobile_must_be_ten_digits_and_unique_in_the_active_business(): void
+    {
+        $this->authenticatedUser();
+        $payload = $this->supplierPayload(['mobile' => '9876543210']);
+
+        $this->postJson('/api/suppliers', $payload)->assertCreated();
+        $this->postJson('/api/suppliers', [...$payload, 'name' => 'Duplicate supplier'])
+            ->assertUnprocessable()->assertJsonValidationErrors('mobile');
+        $this->postJson('/api/suppliers', [...$payload, 'name' => 'Long mobile', 'mobile' => '98765432101'])
+            ->assertUnprocessable()->assertJsonValidationErrors('mobile');
+    }
+
+    public function test_supplier_email_must_be_unique_for_the_same_user(): void
+    {
+        $this->authenticatedUser();
+        $payload = $this->supplierPayload(['email' => 'accounts@example.test']);
+
+        $this->postJson('/api/suppliers', $payload)->assertCreated();
+        $this->postJson('/api/suppliers', [...$payload, 'name' => 'Duplicate email supplier'])
+            ->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
+    public function test_supplier_udyam_number_must_be_unique_for_the_business(): void
+    {
+        $this->authenticatedUser();
+        $payload = $this->supplierPayload(['udyam_number' => 'udyam-mh-12-0012345']);
+
+        $this->postJson('/api/suppliers', $payload)->assertCreated();
+        $this->postJson('/api/suppliers', [...$payload, 'name' => 'Duplicate Udyam supplier'])
+            ->assertUnprocessable()->assertJsonValidationErrors('udyam_number');
+    }
+
     public function test_supplier_records_are_scoped_to_the_active_business(): void
     {
         $this->authenticatedUser();

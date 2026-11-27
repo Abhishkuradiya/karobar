@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import SupplierFormDrawer from '../components/SupplierFormDrawer';
 import api from '../api/axios';
 import { formatMoney, getErrorMessage } from '../utils/format';
+import { useFeedback } from '../context/FeedbackContext';
+import MessageBanner from '../components/MessageBanner';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 const msmeLabels = {
@@ -12,6 +14,7 @@ const msmeLabels = {
 };
 
 export default function SuppliersPage() {
+  const { confirm } = useFeedback();
   const [suppliers, setSuppliers] = useState([]);
   const [meta, setMeta] = useState(emptyMeta);
   const [summary, setSummary] = useState({ count: 0, outstanding: 0 });
@@ -82,7 +85,7 @@ export default function SuppliersPage() {
   };
 
   const deleteSupplier = async (supplier) => {
-    if (!window.confirm(`Delete ${supplier.name}? Past purchases will retain the supplier details.`)) return;
+    if (!await confirm({ title: 'Delete this supplier?', message: `${supplier.name} will be removed. Past purchases will retain the supplier details.`, confirmLabel: 'Delete supplier' })) return;
 
     setNotice('');
     setError('');
@@ -108,8 +111,8 @@ export default function SuppliersPage() {
         </button>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="summary-grid summary-grid-two">
         <article className="summary-card">
@@ -151,7 +154,7 @@ export default function SuppliersPage() {
               <table className="business-table">
                 <thead>
                   <tr>
-                    <th>Supplier</th>
+                    <th>S.No.</th><th>Supplier</th>
                     <th>Mobile</th>
                     <th>GSTIN / State</th>
                     <th>MSME (Udyam)</th>
@@ -161,8 +164,9 @@ export default function SuppliersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {suppliers.map((supplier) => (
+                  {suppliers.map((supplier, index) => (
                     <tr key={supplier.id}>
+                      <td>{(page - 1) * (meta.per_page || 15) + index + 1}</td>
                       <td>
                         <strong>{supplier.name}</strong>
                         {supplier.email && <small className="table-subtext">{supplier.email}</small>}

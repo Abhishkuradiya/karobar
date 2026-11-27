@@ -325,11 +325,12 @@ class PurchaseController extends Controller
                     ->where('business_id', $businessId)
                     ->whereNull('deleted_at')),
             ],
-            'purchase_date' => ['required', 'date_format:Y-m-d'],
+            'purchase_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'supplier_bill_number' => ['nullable', 'string', 'max:60', $billNumberUnique],
-            'supplier_bill_date' => ['nullable', 'date_format:Y-m-d'],
+            'supplier_bill_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:purchase_date'],
             'payment_method' => ['required', Rule::in(self::PAYMENT_METHODS)],
             'bank_account_id' => [
+                'required_if:payment_method,bank',
                 'nullable',
                 'integer',
                 Rule::exists('bank_accounts', 'id')->where(fn (QueryBuilder $query) => $query

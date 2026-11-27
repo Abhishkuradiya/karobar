@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import api from '../api/axios';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
+import MessageBanner from '../components/MessageBanner';
 import './reports.css';
 
 const localDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -167,7 +168,7 @@ function ReportDetail({ reportId }) {
         {data?.period && <span className="reports-period-chip"><i className="bx bx-calendar" /> {formatDate(data.period.from)} – {formatDate(data.period.to)}</span>}
       </div>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
       {loading ? (
         <div className="reports-loading"><span className="spinner-border spinner-border-sm" role="status" /> Preparing report…</div>
       ) : data ? (
@@ -192,10 +193,10 @@ function ReportDetail({ reportId }) {
             ) : (
               <div className="table-responsive reports-table-wrap">
                 <table className="business-table reports-table">
-                  <thead><tr>{data.columns.map((column) => <th className={column.numeric ? 'text-end' : ''} key={column.key}>{column.label}</th>)}</tr></thead>
+                  <thead><tr><th>S.No.</th>{data.columns.map((column) => <th className={column.numeric ? 'text-end' : ''} key={column.key}>{column.label}</th>)}</tr></thead>
                   <tbody>{data.rows.map((row, index) => (
                     <tr key={`${row.reference || row.code || row.date || row.product || 'row'}-${index}`}>
-                      {data.columns.map((column) => <td className={column.numeric ? 'text-end' : ''} key={column.key}>{displayValue(row[column.key], column.key)}</td>)}
+                      <td>{index + 1}</td>{data.columns.map((column) => <td className={column.numeric ? 'text-end' : ''} key={column.key}>{displayValue(row[column.key], column.key)}</td>)}
                     </tr>
                   ))}</tbody>
                 </table>

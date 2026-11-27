@@ -178,7 +178,7 @@ export default function BusinessSetupPage() {
                 </select>
               </label>
               <label className="field-label">
-                <span>City <span className="optional-label">(optional)</span></span>
+                <span>City</span>
                 <input name="city" value={form.city} onChange={updateField} maxLength="100" />
               </label>
             </div>

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 import PaginationControls from '../components/PaginationControls';
+import { useFeedback } from '../context/FeedbackContext';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 const paymentLabels = {
@@ -14,6 +16,7 @@ const paymentLabels = {
 };
 
 export default function PurchasesPage() {
+  const { confirm } = useFeedback();
   const location = useLocation();
   const [purchases, setPurchases] = useState([]);
   const [meta, setMeta] = useState(emptyMeta);
@@ -91,7 +94,7 @@ export default function PurchasesPage() {
   };
 
   const voidPurchase = async (purchase) => {
-    if (!window.confirm(`Void purchase ${purchase.purchase_number}? A reversing journal entry will be recorded.`)) return;
+    if (!await confirm({ title: 'Void this purchase?', message: `${purchase.purchase_number} will be reversed with a journal entry.`, confirmLabel: 'Void purchase' })) return;
 
     setNotice('');
     setError('');
@@ -115,8 +118,8 @@ export default function PurchasesPage() {
         <Link className="btn btn-primary" to="/purchases/new"><i className="bx bx-plus me-1" /> New purchase</Link>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="purchase-filter-row">
         <form className="sales-filter-form" onSubmit={applyFilters}>
@@ -153,7 +156,7 @@ export default function PurchasesPage() {
               <table className="business-table">
                 <thead>
                   <tr>
-                    <th>Purchase</th>
+                    <th>S.No.</th><th>Purchase</th>
                     <th>Date</th>
                     <th>Supplier / bill</th>
                     <th>Paid by</th>
@@ -163,8 +166,9 @@ export default function PurchasesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {purchases.map((purchase) => (
+                  {purchases.map((purchase, index) => (
                     <tr key={purchase.id}>
+                      <td>{(page - 1) * (meta.per_page || 15) + index + 1}</td>
                       <td>
                         <Link className="table-primary-link" to={`/purchases/${purchase.id}/edit`}>{purchase.purchase_number}</Link>
                         <small className="table-subtext">{purchase.items.length} {purchase.items.length === 1 ? 'item' : 'items'}</small>

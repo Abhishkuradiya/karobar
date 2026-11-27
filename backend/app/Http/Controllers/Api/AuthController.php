@@ -16,10 +16,14 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
+        $request->merge([
+            'username' => is_string($request->input('username')) ? strtolower(trim($request->input('username'))) : $request->input('username'),
+            'email' => is_string($request->input('email')) ? strtolower(trim($request->input('email'))) : $request->input('email'),
+        ]);
         $validated = $request->validate([
-            'username' => ['required', 'string', 'min:3', 'max:50', 'unique:users,username'],
+            'username' => ['required', 'string', 'min:3', 'max:50', 'regex:/^[a-z0-9][a-z0-9._-]{2,49}$/', 'unique:users,username'],
             'email' => ['required', 'string', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:6'],
+            'password' => ['required', 'string', 'min:8'],
             'name' => ['nullable', 'string', 'max:100'],
             'terms' => ['nullable', 'boolean'],
         ]);
@@ -53,7 +57,12 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        $loginInput = $request->input('login');
+        $loginInput = trim((string) $request->input('login'));
+        if (filter_var($loginInput, FILTER_VALIDATE_EMAIL)) {
+            $loginInput = strtolower($loginInput);
+        } else {
+            $loginInput = strtolower($loginInput);
+        }
         $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
 
         $user = User::where($field, $loginInput)->first();
@@ -91,6 +100,9 @@ class AuthController extends Controller
     public function updateProfile(Request $request)
     {
         $user = $request->user();
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email')))]);
+        }
         $validated = $request->validate([
             'name' => ['required', 'string', 'max:100'],
             'email' => ['required', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],

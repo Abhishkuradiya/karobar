@@ -41,6 +41,11 @@ class BusinessController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        foreach (['name', 'state', 'city'] as $field) {
+            if (is_string($request->input($field))) {
+                $request->merge([$field => trim($request->input($field))]);
+            }
+        }
         if (is_string($request->input('gstin'))) {
             $request->merge(['gstin' => strtoupper(trim($request->input('gstin')))]);
         }
@@ -58,6 +63,7 @@ class BusinessController extends Controller
                 'string',
                 'size:15',
                 'regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z][1-9A-Z]Z[0-9A-Z]$/',
+                Rule::unique('businesses', 'gstin'),
             ],
             'gst_return_frequency' => [
                 'nullable',

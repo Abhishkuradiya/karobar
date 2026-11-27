@@ -2,6 +2,7 @@ import { useState } from 'react';
 import api from '../api/axios';
 import { indiaStates } from '../utils/indiaStates';
 import { getErrorMessage } from '../utils/format';
+import MessageBanner from './MessageBanner';
 
 const msmeTypes = [
   { value: 'not_known', label: 'Not MSME / not known' },
@@ -84,7 +85,7 @@ export default function SupplierFormDrawer({ supplier, onClose, onSaved }) {
             </button>
           </div>
 
-          {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+          <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
           <div className="drawer-fields">
             <label className="field-label">
@@ -95,7 +96,7 @@ export default function SupplierFormDrawer({ supplier, onClose, onSaved }) {
             <div className="form-grid-two">
               <label className="field-label">
                 Mobile
-                <input name="mobile" type="tel" value={form.mobile} onChange={updateField} maxLength="30" placeholder="Mobile number" />
+                <input name="mobile" type="tel" inputMode="numeric" pattern="[0-9]{10}" value={form.mobile} onChange={updateField} maxLength="10" placeholder="10-digit mobile number" />
               </label>
               <label className="field-label">
                 Credit days

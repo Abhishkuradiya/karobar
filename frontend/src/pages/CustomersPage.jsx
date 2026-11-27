@@ -2,10 +2,13 @@ import { useCallback, useEffect, useState } from 'react';
 import CustomerFormDrawer from '../components/CustomerFormDrawer';
 import api from '../api/axios';
 import { formatMoney, getErrorMessage } from '../utils/format';
+import { useFeedback } from '../context/FeedbackContext';
+import MessageBanner from '../components/MessageBanner';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 
 export default function CustomersPage() {
+  const { confirm } = useFeedback();
   const [customers, setCustomers] = useState([]);
   const [meta, setMeta] = useState(emptyMeta);
   const [summary, setSummary] = useState({ count: 0, outstanding: 0 });
@@ -76,18 +79,18 @@ export default function CustomersPage() {
     loadCustomers();
   };
 
-  const archiveCustomer = async (customer) => {
-    if (!window.confirm(`Archive ${customer.name}? Past sales will keep their customer details.`)) return;
+  const deleteCustomer = async (customer) => {
+    if (!await confirm({ title: 'Delete this customer?', message: `${customer.name} will be removed from the active customer list. Past sales will keep their details.`, confirmLabel: 'Delete customer' })) return;
 
     setNotice('');
     setError('');
     try {
       await api.delete(`/customers/${customer.id}`);
-      setNotice(`${customer.name} was archived.`);
+      setNotice(`${customer.name} was deleted.`);
       setLoading(true);
       await loadCustomers();
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Could not archive this customer.'));
+      setError(getErrorMessage(requestError, 'Could not delete this customer.'));
     }
   };
 
@@ -104,8 +107,8 @@ export default function CustomersPage() {
         </button>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="summary-grid summary-grid-two">
         <article className="summary-card">
@@ -147,7 +150,7 @@ export default function CustomersPage() {
               <table className="business-table">
                 <thead>
                   <tr>
-                    <th>Customer</th>
+                    <th>S.No.</th><th>Customer</th>
                     <th>Mobile</th>
                     <th>GSTIN / State</th>
                     <th>Credit terms</th>
@@ -156,8 +159,9 @@ export default function CustomersPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {customers.map((customer) => (
+                  {customers.map((customer, index) => (
                     <tr key={customer.id}>
+                      <td>{(page - 1) * (meta.per_page || 15) + index + 1}</td>
                       <td>
                         <strong>{customer.name}</strong>
                         {customer.email && <small className="table-subtext">{customer.email}</small>}
@@ -177,8 +181,8 @@ export default function CustomersPage() {
                           <button type="button" className="icon-button" onClick={() => setDrawer({ customer })} aria-label={`Edit ${customer.name}`} title="Edit customer">
                             <i className="bx bx-edit-alt" />
                           </button>
-                          <button type="button" className="icon-button danger-icon" onClick={() => archiveCustomer(customer)} aria-label={`Archive ${customer.name}`} title="Archive customer">
-                            <i className="bx bx-archive" />
+                          <button type="button" className="icon-button danger-icon" onClick={() => deleteCustomer(customer)} aria-label={`Delete ${customer.name}`} title="Delete customer">
+                            <i className="bx bx-trash" />
                           </button>
                         </div>
                       </td>

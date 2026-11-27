@@ -34,6 +34,55 @@ class InventoryBankingInvoiceApiTest extends TestCase
             ->assertJsonPath('days', 60);
     }
 
+    public function test_product_sku_is_required_to_be_unique_within_the_active_business(): void
+    {
+        $this->authenticatedUser();
+        $payload = [
+            'name' => 'First SKU product',
+            'sku' => 'sku-001',
+            'gst_rate' => 0,
+            'purchase_price' => 10,
+            'selling_price' => 15,
+            'is_service' => false,
+            'track_stock' => true,
+            'batch_tracking' => false,
+        ];
+
+        $this->postJson('/api/inventory/products', $payload)
+            ->assertCreated()
+            ->assertJsonPath('sku', 'SKU-001');
+
+        $this->postJson('/api/inventory/products', [...$payload, 'name' => 'Duplicate SKU product'])
+            ->assertUnprocessable()->assertJsonValidationErrors('sku');
+
+        $this->postJson('/api/inventory/products', [...$payload, 'name' => 'Case variant SKU', 'sku' => 'Sku-001'])
+            ->assertUnprocessable()->assertJsonValidationErrors('sku');
+    }
+
+    public function test_product_categories_are_unique_case_insensitively(): void
+    {
+        $this->authenticatedUser();
+
+        $this->postJson('/api/inventory/categories', ['name' => 'Electronics'])->assertCreated();
+        $this->postJson('/api/inventory/categories', ['name' => 'electronics'])
+            ->assertUnprocessable()->assertJsonValidationErrors('name');
+    }
+
+    public function test_opening_batch_details_require_batch_tracking(): void
+    {
+        $this->authenticatedUser();
+
+        $this->postJson('/api/inventory/products', [
+            'name' => 'Untracked batch product',
+            'gst_rate' => 0,
+            'track_stock' => true,
+            'batch_tracking' => false,
+            'opening_quantity' => 2,
+            'opening_unit_cost' => 10,
+            'opening_batch_number' => 'BATCH-1',
+        ])->assertUnprocessable()->assertJsonValidationErrors('batch_tracking');
+    }
+
     public function test_purchases_receive_stock_sales_consume_it_and_credit_notes_return_it(): void
     {
         $this->authenticatedUser();

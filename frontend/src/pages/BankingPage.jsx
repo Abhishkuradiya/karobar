@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
 import { formatMoney, getErrorMessage } from '../utils/format';
+import { useFeedback } from '../context/FeedbackContext';
+import MessageBanner from '../components/MessageBanner';
 import './inventory-banking-invoices.css';
 
 const emptyAccount = () => ({ name: '', bank_name: '', account_number: '', ifsc: '', upi_id: '' });
 
 export default function BankingPage() {
+  const { confirm } = useFeedback();
   const [accounts, setAccounts] = useState([]);
   const [accountId, setAccountId] = useState('');
   const [accountForm, setAccountForm] = useState(emptyAccount());
@@ -125,16 +128,16 @@ export default function BankingPage() {
     setError('');
   };
 
-  const archiveAccount = async (account) => {
-    if (!window.confirm(`Archive ${account.name}? Accounts with imported statement history cannot be archived.`)) return;
+  const deleteAccount = async (account) => {
+    if (!await confirm({ title: 'Delete bank account?', message: `${account.name} will be removed from active banking. Accounts with imported statement history may not be deletable.`, confirmLabel: 'Delete account' })) return;
     setError('');
     try {
       await api.delete(`/banking/accounts/${account.id}`);
       setAccounts((current) => current.filter((item) => item.id !== account.id));
       setAccountId((current) => String(current) === String(account.id) ? '' : current);
-      setNotice(`${account.name} was archived.`);
+      setNotice(`${account.name} was deleted.`);
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Could not archive this account.'));
+      setError(getErrorMessage(requestError, 'Could not delete this account.'));
     }
   };
 
@@ -218,12 +221,12 @@ export default function BankingPage() {
         <div><span className="eyebrow">CASH & BANK RECONCILIATION</span><h1>Banking</h1><p>Import statements and match each bank transaction to your books.</p></div>
         <button className="btn btn-primary" type="button" onClick={() => { setEditingAccount(null); setAccountForm(emptyAccount()); setAccountModal(true); setError(''); }}><i className="bx bx-plus me-1" /> Add bank account</button>
       </div>
-      {notice && <div className="alert alert-success py-2" role="status">{notice}<button className="btn-close float-end" type="button" aria-label="Dismiss" onClick={() => setNotice('')} /></div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="data-card">
         <div className="data-card-toolbar banking-toolbar"><div><h2>Your bank accounts</h2><span className="muted-copy">Account numbers are masked and only the last four digits are retained.</span></div></div>
-        {loading ? <div className="loading-state">Loading bank accounts…</div> : accounts.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-building-house" /></span><h3>No bank accounts yet</h3><p>Add an account to import a statement and reconcile bank-paid transactions.</p><button className="btn btn-primary" type="button" onClick={() => setAccountModal(true)}>Add a bank account</button></div> : <div className="bank-account-grid">{accounts.map((account) => <article key={account.id} className={`bank-account-card${String(account.id) === String(accountId) ? ' is-selected' : ''}`}><button type="button" className="stretched-link-button" aria-label={`Select ${account.name}`} onClick={() => { setAccountId(String(account.id)); setError(''); }} /><h3>{account.name}</h3><p>{account.bank_name}</p><span className="account-last4">{account.account_last4 ? `•••• ${account.account_last4}` : 'Account number not provided'}</span><div className="account-actions"><button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setAccountId(String(account.id))}>Reconcile <span className="badge text-bg-light ms-1">{account.unreconciled_count || 0}</span></button><button type="button" className="icon-button danger-icon" aria-label={`Archive ${account.name}`} title="Archive account" onClick={() => archiveAccount(account)}><i className="bx bx-archive" /></button></div></article>)}</div>}
+        {loading ? <div className="loading-state">Loading bank accounts…</div> : accounts.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-building-house" /></span><h3>No bank accounts yet</h3><p>Add an account to import a statement and reconcile bank-paid transactions.</p><button className="btn btn-primary" type="button" onClick={() => setAccountModal(true)}>Add a bank account</button></div> : <div className="bank-account-grid">{accounts.map((account) => <article key={account.id} className={`bank-account-card${String(account.id) === String(accountId) ? ' is-selected' : ''}`}><button type="button" className="stretched-link-button" aria-label={`Select ${account.name}`} onClick={() => { setAccountId(String(account.id)); setError(''); }} /><h3>{account.name}</h3><p>{account.bank_name}</p><span className="account-last4">{account.account_last4 ? `•••• ${account.account_last4}` : 'Account number not provided'}</span><div className="account-actions"><button type="button" className="btn btn-sm btn-outline-primary" onClick={() => setAccountId(String(account.id))}>Reconcile <span className="badge text-bg-light ms-1">{account.unreconciled_count || 0}</span></button><button type="button" className="icon-button danger-icon" aria-label={`Delete ${account.name}`} title="Delete account" onClick={() => deleteAccount(account)}><i className="bx bx-trash" /></button></div></article>)}</div>}
       </div>
 
       {activeAccount && <button className="btn btn-outline-primary align-self-end" type="button" onClick={() => openEditAccount(activeAccount)}><i className="bx bx-edit-alt me-1" /> Edit {activeAccount.name}</button>}

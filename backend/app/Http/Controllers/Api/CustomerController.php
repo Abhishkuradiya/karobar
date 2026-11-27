@@ -36,7 +36,8 @@ class CustomerController extends Controller
                         ->orWhere('email', 'like', "%{$search}%");
                 });
             })
-            ->orderBy('name');
+            ->orderByDesc('created_at')
+            ->orderByDesc('id');
 
         $customers = $query->paginate($validated['per_page'] ?? 15)->withQueryString();
 
@@ -57,6 +58,7 @@ class CustomerController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->rules($request));
         if (array_key_exists('gstin', $validated) && $validated['gstin'] !== null) {
             $validated['gstin'] = strtoupper($validated['gstin']);
@@ -164,6 +166,7 @@ class CustomerController extends Controller
     public function update(Request $request, int $customer): JsonResponse
     {
         $record = $this->ownedCustomer($request, $customer);
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->rules($request, $record));
         if (array_key_exists('gstin', $validated) && $validated['gstin'] !== null) {
             $validated['gstin'] = strtoupper($validated['gstin']);
@@ -194,6 +197,14 @@ class CustomerController extends Controller
 
     private function rules(Request $request, ?Customer $customer = null): array
     {
+        $mobileUnique = Rule::unique('customers', 'mobile')
+            ->where(fn (QueryBuilder $query) => $query
+                ->where('user_id', $request->user()->id)
+                ->where('business_id', $request->user()->activeBusiness->id)
+                ->whereNull('deleted_at'));
+        if ($customer) {
+            $mobileUnique->ignore($customer->id);
+        }
         $gstinUnique = Rule::unique('customers', 'gstin')
             ->where(fn (QueryBuilder $query) => $query
                 ->where('business_id', $request->user()->activeBusiness->id)
@@ -202,10 +213,17 @@ class CustomerController extends Controller
         if ($customer) {
             $gstinUnique->ignore($customer->id);
         }
+        $emailUnique = Rule::unique('customers', 'email')
+            ->where(fn (QueryBuilder $query) => $query
+                ->where('user_id', $request->user()->id)
+                ->whereNull('deleted_at'));
+        if ($customer) {
+            $emailUnique->ignore($customer->id);
+        }
 
         return [
             'name' => ['required', 'string', 'max:150'],
-            'mobile' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+()\\-\\s]{7,30}$/'],
+            'mobile' => ['nullable', 'digits:10', $mobileUnique],
             'credit_days' => ['required', 'integer', 'min:0', 'max:3650'],
             'credit_limit' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
             'gstin' => [
@@ -216,8 +234,24 @@ class CustomerController extends Controller
                 $gstinUnique,
             ],
             'state' => ['nullable', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:254'],
+            'email' => ['nullable', 'email', 'max:254', $emailUnique],
             'address' => ['nullable', 'string', 'max:2000'],
         ];
+    }
+
+    private function normalizeIdentifiers(Request $request): void
+    {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => trim($request->input('name'))]);
+        }
+        if (is_string($request->input('mobile'))) {
+            $request->merge(['mobile' => trim($request->input('mobile')) ?: null]);
+        }
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email'))) ?: null]);
+        }
+        if (is_string($request->input('gstin'))) {
+            $request->merge(['gstin' => strtoupper(trim($request->input('gstin'))) ?: null]);
+        }
     }
 }

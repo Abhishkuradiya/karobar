@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatMoney, getErrorMessage } from '../utils/format';
 import '../pages/accounting-pages.css';
 
@@ -47,7 +48,7 @@ export default function OpeningBalancesPage() {
 
   return <section className="page-stack opening-balances-page">
     <div className="page-heading accounting-page-heading"><div><span className="eyebrow">ACCOUNTING SETUP</span><h1>Opening balances</h1><p>Balances as on {data?.opening_date || 'the start date'}, the day your books start in Karobar.</p></div></div>
-    {notice && <div className="alert alert-success" role="status">{notice}</div>}{error && <div className="alert alert-danger" role="alert">{error}</div>}
+    <MessageBanner message={notice} onDismiss={() => setNotice('')} /><MessageBanner message={error} type="error" onDismiss={() => setError('')} />
     <div className="opening-balance-note"><i className="bx bx-info-circle" /><span>Enter what each account held on the start date. Any difference is recorded in Opening Balance Equity. Customer and supplier balances should be entered on their respective party pages.</span></div>
     {loading ? <div className="data-card loading-state">Loading opening balances…</div> : <form onSubmit={save}>
       {['assets', 'liabilities', 'equity'].map((type) => <section className="data-card opening-balance-section" key={type}><div className="opening-section-heading"><div><span className="eyebrow">{labels[type]}</span><p>{type === 'assets' ? 'What the business owns — cash, bank, stock and recoverables' : type === 'liabilities' ? 'What the business owes — suppliers, loans and taxes' : "Owner's capital and past profits"}</p></div></div>{(data.accounts[type] || []).map((account) => <div className="opening-balance-row" key={account.account_code}><div><strong>{account.name}</strong><small>{account.display_code} · {account.group_name}</small></div><input aria-label={`${account.name} amount`} min="0" step="0.01" type="number" value={values[account.account_code] ?? ''} onChange={(event) => setValues((current) => ({ ...current, [account.account_code]: event.target.value }))} placeholder="0.00" /><select aria-label={`${account.name} side`} value={sides[account.account_code]} onChange={(event) => setSides((current) => ({ ...current, [account.account_code]: event.target.value }))}><option value="debit">Dr</option><option value="credit">Cr</option></select></div>)}</section>)}

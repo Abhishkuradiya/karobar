@@ -64,16 +64,17 @@ class BusinessApiTest extends TestCase
         $compositionBusiness = $this->postJson('/api/businesses', $this->businessPayload([
             'name' => 'Composition business',
             'gst_registration_type' => 'composition',
+            'gstin' => '27AAQFU0939F1ZU',
             'gst_return_frequency' => null,
         ]))
             ->assertCreated()
-            ->assertJsonPath('business.gstin', '27AAPFU0939F1ZV')
+            ->assertJsonPath('business.gstin', '27AAQFU0939F1ZU')
             ->assertJsonPath('business.gst_return_frequency', null)
             ->json('business');
 
         $this->assertDatabaseHas('businesses', [
             'id' => $compositionBusiness['id'],
-            'gstin' => '27AAPFU0939F1ZV',
+            'gstin' => '27AAQFU0939F1ZU',
             'gst_return_frequency' => null,
         ]);
 
@@ -110,6 +111,7 @@ class BusinessApiTest extends TestCase
 
         $secondBusiness = $this->postJson('/api/businesses', $this->businessPayload([
             'name' => 'Second business',
+            'gstin' => '27AABCU9603R1ZV',
             'business_type' => 'services',
         ]))->assertCreated()->json('business');
 
@@ -145,6 +147,7 @@ class BusinessApiTest extends TestCase
         ]);
         $otherBusiness = $otherUser->businesses()->create($this->businessPayload([
             'name' => 'Private business',
+            'gstin' => '27AABCU9603R1ZX',
         ]));
         Sanctum::actingAs($otherUser);
         $this->patchJson('/api/businesses/active', [

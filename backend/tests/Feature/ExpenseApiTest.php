@@ -138,6 +138,15 @@ class ExpenseApiTest extends TestCase
         $this->deleteJson("/api/expenses/{$expense['id']}")->assertNotFound();
     }
 
+    public function test_bank_expense_requires_an_active_bank_account(): void
+    {
+        $this->authenticatedUser();
+
+        $this->postJson('/api/expenses', $this->expensePayload([
+            'payment_method' => 'bank',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('bank_account_id');
+    }
+
     private function authenticatedUser(): User
     {
         $user = User::factory()->create([

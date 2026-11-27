@@ -45,9 +45,9 @@ class OpeningBalanceController extends Controller
     public function store(Request $request, JournalPostingService $posting): JsonResponse
     {
         $validated = $request->validate([
-            'opening_date' => ['required', 'date_format:Y-m-d'],
+            'opening_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'balances' => ['required', 'array'],
-            'balances.*.account_code' => ['required', 'string', 'max:40'],
+            'balances.*.account_code' => ['required', 'string', 'max:40', 'distinct'],
             'balances.*.amount' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
             'balances.*.side' => ['required', 'in:debit,credit'],
         ]);

@@ -35,10 +35,11 @@ import OpeningBalancesPage from './pages/OpeningBalancesPage';
 import AiAccountantPage from './pages/AiAccountantPage';
 import './App.css';
 import './business.css';
+import { FeedbackProvider } from './context/FeedbackContext';
 
 export default function App() {
   return (
-    <AuthProvider>
+    <FeedbackProvider><AuthProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/login" element={<Login />} />
@@ -83,6 +84,6 @@ export default function App() {
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
-    </AuthProvider>
+    </AuthProvider></FeedbackProvider>
   );
 }

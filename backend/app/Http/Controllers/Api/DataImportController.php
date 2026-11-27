@@ -42,8 +42,8 @@ class DataImportController extends Controller
     {
         $request->validate([
             'type' => ['nullable', Rule::in(self::IMPORT_TYPES)],
-            'file' => ['required', 'file', 'max:10240'],
-            'opening_date' => ['nullable', 'date_format:Y-m-d'],
+            'file' => ['required', 'file', $type === 'tally_xml' ? 'mimes:xml,txt' : 'mimes:csv,txt', 'max:10240'],
+            'opening_date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
         ]);
         if (! in_array($type, self::IMPORT_TYPES, true)) {
             throw ValidationException::withMessages(['type' => ['Select a supported import type.']]);
@@ -138,7 +138,7 @@ class DataImportController extends Controller
                 continue;
             }
             $date = $this->cell($row, $headers, ['entry_date', 'date']) ?: $openingDate ?: now()->startOfMonth()->toDateString();
-            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! strtotime($date)) {
+            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! strtotime($date) || $date > now()->toDateString()) {
                 $errors[] = ['row' => $lineNumber, 'message' => 'Date must use YYYY-MM-DD.'];
                 continue;
             }
@@ -197,7 +197,7 @@ class DataImportController extends Controller
             $debit = $this->amount($this->cell($row, $headers, ['debit']));
             $credit = $this->amount($this->cell($row, $headers, ['credit']));
             $rowError = null;
-            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! strtotime($date)) {
+            if (! preg_match('/^\d{4}-\d{2}-\d{2}$/', $date) || ! strtotime($date) || $date > now()->toDateString()) {
                 $rowError = 'Date must use YYYY-MM-DD.';
             } elseif (! $account) {
                 $rowError = 'Account code or name does not match this business chart of accounts.';
@@ -317,7 +317,7 @@ class DataImportController extends Controller
                 $debits = 0.0;
                 $credits = 0.0;
                 $ledgerEntries = $xpath->query('.//*[local-name()="ALLLEDGERENTRIES.LIST" or local-name()="LEDGERENTRIES.LIST"]', $voucher);
-                if ($date === null) {
+                if ($date === null || $date > now()->toDateString()) {
                     $errors[] = ['row' => $voucherIndex + 1, 'message' => "Voucher {$number} has an invalid date."];
                     continue;
                 }
@@ -379,6 +379,9 @@ class DataImportController extends Controller
                 continue;
             }
             $rows[] = array_slice(array_pad($cells, count($headers), ''), 0, count($headers));
+            if (count($rows) > 5000) {
+                throw ValidationException::withMessages(['file' => ['An import can contain at most 5,000 data rows.']]);
+            }
         }
         fclose($handle);
 
@@ -404,7 +407,8 @@ class DataImportController extends Controller
             return null;
         }
 
-        return round((float) $value, 2);
+        $amount = round((float) $value, 2);
+        return abs($amount) <= 999999999999.99 ? $amount : null;
     }
 
     private function tallyDate(string $value): ?string

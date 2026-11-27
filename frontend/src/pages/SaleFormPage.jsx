@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import CustomerFormDrawer from '../components/CustomerFormDrawer';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatMoney, getErrorMessage } from '../utils/format';
 
 const paymentMethods = [
@@ -229,7 +230,7 @@ export default function SaleFormPage() {
         </div>
       </div>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <form className="sale-entry-layout" onSubmit={saveSale}>
         <div className="sale-entry-main">
@@ -342,7 +343,7 @@ export default function SaleFormPage() {
                     </label>
                     <label className="field-label">
                       HSN/SAC
-                      <input name="hsn_sac" value={item.hsn_sac} onChange={(event) => updateItem(index, event)} maxLength="20" placeholder="Optional" />
+                      <input name="hsn_sac" value={item.hsn_sac} onChange={(event) => updateItem(index, event)} maxLength="20" placeholder="HSN/SAC code" />
                     </label>
                   </div>
                   <div className="sale-item-total">
@@ -359,7 +360,7 @@ export default function SaleFormPage() {
           </section>
 
           <label className="field-label notes-field">
-            Notes <span className="optional-label">Optional</span>
+            Notes
             <textarea name="notes" value={form.notes} onChange={updateField} maxLength="2000" rows="2" placeholder="Add a note for your records" />
           </label>
 

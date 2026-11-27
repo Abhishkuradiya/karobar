@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 import './inventory-banking-invoices.css';
+import { useFeedback } from '../context/FeedbackContext';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const emptyFilters = { search: '', from: '', to: '', status: 'all' };
 
 export default function InvoicesPage() {
+  const { confirm } = useFeedback();
   const [tab, setTab] = useState('invoices');
   const [filters, setFilters] = useState(emptyFilters);
   const [invoices, setInvoices] = useState([]);
@@ -190,7 +193,7 @@ export default function InvoicesPage() {
   };
 
   const deleteReturnNote = async (note) => {
-    if (!window.confirm(`Delete ${note.note_number}? Its journal and inventory effects will be reversed.`)) return;
+    if (!await confirm({ title: 'Delete this return note?', message: `${note.note_number} and its journal/inventory effects will be reversed.`, confirmLabel: 'Delete note' })) return;
     const endpoint = note.note_type === 'credit' ? '/credit-notes' : '/debit-notes';
     setDeletingNoteId(note.id);
     setError('');
@@ -223,8 +226,8 @@ export default function InvoicesPage() {
   return (
     <section className="page-stack">
       <div className="page-heading"><div><span className="eyebrow">CUSTOMER INVOICES & RETURNS</span><h1>Invoices</h1><p>Review issued invoices and keep credit and debit notes linked to the original transaction.</p></div><div className="d-flex gap-2"><button type="button" className="btn btn-outline-primary" disabled={saving} onClick={() => startReturnNote('debit')}><i className="bx bx-minus-circle me-1" /> Debit note</button><button type="button" className="btn btn-primary" disabled={saving} onClick={() => startReturnNote('credit')}><i className="bx bx-undo me-1" /> Credit note</button></div></div>
-      {notice && <div className="alert alert-success py-2" role="status">{notice}<button className="btn-close float-end" type="button" aria-label="Dismiss" onClick={() => setNotice('')} /></div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
       <div className="finance-tabs" role="tablist" aria-label="Invoice records">
         {[['invoices', 'Invoices', 'bx-file'], ['credit-notes', 'Credit notes', 'bx-undo'], ['debit-notes', 'Debit notes', 'bx-log-in-circle']].map(([id, label, icon]) => <button key={id} role="tab" aria-selected={tab === id} type="button" className={tab === id ? 'is-active' : ''} onClick={() => { setLoading(true); setTab(id); setError(''); }}><i className={`bx ${icon}`} /> {label}</button>)}
       </div>

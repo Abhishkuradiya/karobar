@@ -80,6 +80,37 @@ class CustomerApiTest extends TestCase
         $this->assertSoftDeleted('customers', ['id' => $customer->id]);
     }
 
+    public function test_customer_mobile_must_be_ten_digits_and_unique_in_the_active_business(): void
+    {
+        $user = User::factory()->create(['username' => 'customer-validation', 'email' => 'customer-validation@example.test']);
+        $business = $this->createBusiness($user);
+        Sanctum::actingAs($user);
+        $payload = ['name' => 'First customer', 'mobile' => '9876543210', 'credit_days' => 0];
+
+        $this->postJson('/api/customers', $payload)->assertCreated();
+        $this->postJson('/api/customers', [...$payload, 'name' => 'Duplicate customer'])
+            ->assertUnprocessable()->assertJsonValidationErrors('mobile');
+        $this->postJson('/api/customers', [...$payload, 'name' => 'Long mobile', 'mobile' => '98765432101'])
+            ->assertUnprocessable()->assertJsonValidationErrors('mobile');
+    }
+
+    public function test_customer_email_must_be_unique_for_the_same_user(): void
+    {
+        $user = User::factory()->create([
+            'username' => 'customer-email-validation',
+            'email' => 'customer-email-validation@example.test',
+        ]);
+        $this->createBusiness($user);
+        Sanctum::actingAs($user);
+        $payload = ['name' => 'First email customer', 'email' => 'Accounts@Example.test', 'credit_days' => 0];
+
+        $this->postJson('/api/customers', $payload)
+            ->assertCreated()
+            ->assertJsonPath('email', 'accounts@example.test');
+        $this->postJson('/api/customers', [...$payload, 'name' => 'Duplicate email customer', 'email' => 'accounts@example.test'])
+            ->assertUnprocessable()->assertJsonValidationErrors('email');
+    }
+
     public function test_customers_are_not_accessible_to_other_users(): void
     {
         $owner = User::factory()->create([

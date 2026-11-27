@@ -3,6 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/useAuth';
 import { getErrorMessage } from '../utils/format';
+import MessageBanner from '../components/MessageBanner';
 import './settings.css';
 
 const notificationOptions = [
@@ -187,14 +188,7 @@ export default function SettingsPage() {
         <p>Manage your business details, sign-in profile, and in-app notifications.</p>
       </header>
 
-      {(error || notice) && (
-        <div className={`settings-alert ${error ? 'is-error' : 'is-success'}`} role={error ? 'alert' : 'status'}>
-          <span>{error || notice}</span>
-          <button type="button" aria-label="Dismiss message" onClick={() => { setError(''); setNotice(''); }}>
-            <i className="bx bx-x" />
-          </button>
-        </div>
-      )}
+      <MessageBanner message={error || notice} type={error ? 'error' : 'success'} onDismiss={clearAlerts} />
 
       <nav className="settings-tabs" aria-label="Settings sections">
         {[

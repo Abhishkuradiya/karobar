@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { formatDate, getErrorMessage } from '../utils/format';
+import MessageBanner from '../components/MessageBanner';
 import './help-support.css';
 
 const urgencyLabels = {
@@ -80,8 +81,8 @@ export default function HelpSupportPage() {
         <p>Requests are stored in your Karobar account and shown below. This in-app form does not send email or notify a support agent.</p>
       </aside>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
 
       <section className="support-request-card" aria-labelledby="support-new-request-title">
         <div className="support-card-heading">

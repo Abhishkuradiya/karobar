@@ -5,6 +5,8 @@ import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 import './inventory-banking-invoices.css';
 import './accounting-pages.css';
 import PaginationControls from '../components/PaginationControls';
+import { useFeedback } from '../context/FeedbackContext';
+import MessageBanner from '../components/MessageBanner';
 
 const currentMonth = () => {
   const date = new Date();
@@ -30,8 +32,8 @@ function PageHeading({ eyebrow, title, description, children }) {
 function PageAlerts({ error, notice, onDismiss }) {
   return (
     <>
-      {notice && <div className="alert alert-success py-2" role="status">{notice}<button className="btn-close float-end" type="button" aria-label="Dismiss" onClick={onDismiss} /></div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={onDismiss} />
+      <MessageBanner message={error} type="error" onDismiss={onDismiss} />
     </>
   );
 }
@@ -198,7 +200,7 @@ export function CashTallyPage() {
           {loading ? <div className="loading-state">Loading cash balance…</div> : <form className="accounting-tally-form" onSubmit={save}>
             <div className="accounting-book-amount"><span>Cash in books</span><strong>{formatMoney(bookAmount)}</strong></div>
             <label className="inventory-field">Cash counted<input type="number" min="0" step="0.01" required disabled={Boolean(tally)} value={countedAmount} onChange={(event) => setCountedAmount(event.target.value)} placeholder="Enter the counted amount" /></label>
-            <label className="inventory-field">Note <small className="text-secondary fw-normal">(optional)</small><textarea rows="3" maxLength="255" disabled={Boolean(tally)} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a note about this count" /></label>
+            <label className="inventory-field">Note<textarea rows="3" maxLength="255" disabled={Boolean(tally)} value={note} onChange={(event) => setNote(event.target.value)} placeholder="Add a note about this count" /></label>
             {countedAmount !== '' && <div className={`accounting-difference${difference < 0 ? ' is-negative' : ''}`}><span>Difference</span><strong>{formatMoney(difference)}</strong></div>}
             {tally && <div className="alert alert-success mb-0">This date has already been tallied. The posted count is read-only.</div>}
             <button type="submit" className="btn btn-primary accounting-submit" disabled={saving || Boolean(tally) || countedAmount === ''}>{saving ? 'Saving…' : 'Save cash tally'}</button>
@@ -387,6 +389,7 @@ export function JournalPage() {
 }
 
 export function ChartOfAccountsPage() {
+  const { confirm } = useFeedback();
   const [accounts, setAccounts] = useState([]);
   const [search, setSearch] = useState('');
   const [type, setType] = useState('');
@@ -460,7 +463,7 @@ export function ChartOfAccountsPage() {
   };
 
   const deleteAccount = async (account) => {
-    if (!window.confirm(`Delete ${account.name}? Accounts with journal history or required by accounting workflows cannot be deleted.`)) return;
+    if (!await confirm({ title: 'Delete this account?', message: `${account.name} cannot be deleted if it has journal history or is required by accounting workflows.`, confirmLabel: 'Delete account' })) return;
     setSaving(true);
     setError('');
     setNotice('');

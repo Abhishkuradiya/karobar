@@ -50,6 +50,7 @@ class ChartAccountsController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeInput($request);
         $validated = $request->validate([
             'display_code' => ['required', 'string', 'max:20'],
             'name' => ['required', 'string', 'max:120'],
@@ -96,6 +97,7 @@ class ChartAccountsController extends Controller
 
     public function update(Request $request, string $accountCode): JsonResponse
     {
+        $this->normalizeInput($request);
         $user = $request->user();
         $businessId = $user->activeBusiness->id;
         $systemAccount = collect(ChartAccountCatalog::systemAccounts())
@@ -206,6 +208,15 @@ class ChartAccountsController extends Controller
             ->where('account_code', $accountCode)
             ->whereHas('journalEntry', fn ($query) => $query->where('business_id', $businessId))
             ->exists();
+    }
+
+    private function normalizeInput(Request $request): void
+    {
+        foreach (['display_code', 'name', 'group_name'] as $field) {
+            if (is_string($request->input($field))) {
+                $request->merge([$field => trim($request->input($field))]);
+            }
+        }
     }
 
     private function customAccountData(ChartAccount $account, bool $hasTransactions): array

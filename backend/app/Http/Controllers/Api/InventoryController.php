@@ -47,7 +47,8 @@ class InventoryController extends Controller
             ->when($validated['category_id'] ?? null, fn (Builder $query, int $id) => $query->where('category_id', $id));
 
         $products = (clone $query)
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate($validated['per_page'] ?? 50)
             ->withQueryString();
 
@@ -84,8 +85,10 @@ class InventoryController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->productRules($request));
         $this->validateGst($validated['gst_rate']);
+        $this->validateProductOptions($validated);
         $user = $request->user();
         $businessId = $user->activeBusiness->id;
         $this->assertCategory($user->id, $businessId, $validated['category_id'] ?? null);
@@ -154,8 +157,10 @@ class InventoryController extends Controller
     public function update(Request $request, int $product): JsonResponse
     {
         $record = $this->ownedProduct($request, $product);
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->productRules($request, $record->id));
         $this->validateGst($validated['gst_rate']);
+        $this->validateProductOptions($validated);
         $this->assertCategory($request->user()->id, $record->business_id, $validated['category_id'] ?? null);
 
         if ($record->current_stock > 0 && (
@@ -191,7 +196,7 @@ class InventoryController extends Controller
         $record = $this->ownedProduct($request, $product);
         if ((float) $record->current_stock !== 0.0) {
             throw ValidationException::withMessages([
-                'product' => ['Adjust stock to zero before archiving this product.'],
+                'product' => ['Adjust stock to zero before deleting this product.'],
             ]);
         }
 
@@ -214,6 +219,9 @@ class InventoryController extends Controller
 
     public function storeCategory(Request $request): JsonResponse
     {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => trim($request->input('name'))]);
+        }
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -224,10 +232,19 @@ class InventoryController extends Controller
                 ),
             ],
         ]);
+        $businessId = $request->user()->activeBusiness->id;
+        if (ProductCategory::query()
+            ->where('business_id', $businessId)
+            ->whereRaw('LOWER(name) = LOWER(?)', [$validated['name']])
+            ->exists()) {
+            throw ValidationException::withMessages([
+                'name' => ['This category already exists for this business.'],
+            ]);
+        }
         $user = $request->user();
         $category = ProductCategory::create([
             'user_id' => $user->id,
-            'business_id' => $user->activeBusiness->id,
+            'business_id' => $businessId,
             'name' => trim($validated['name']),
         ]);
 
@@ -407,6 +424,43 @@ class InventoryController extends Controller
             throw ValidationException::withMessages([
                 'gst_rate' => ['Choose a supported GST rate: 0%, 0.25%, 3%, 5%, 12%, 18%, 28% or 40%.'],
             ]);
+        }
+    }
+
+    private function validateProductOptions(array $validated): void
+    {
+        $isService = (bool) ($validated['is_service'] ?? false);
+        $trackStock = (bool) ($validated['track_stock'] ?? true) && ! $isService;
+        $batchTracking = (bool) ($validated['batch_tracking'] ?? false);
+        $openingQuantity = (float) ($validated['opening_quantity'] ?? 0);
+
+        if (! $trackStock && $openingQuantity > 0) {
+            throw ValidationException::withMessages([
+                'opening_quantity' => ['Opening stock requires a product that tracks stock.'],
+            ]);
+        }
+        if (! $batchTracking && (! empty($validated['opening_batch_number']) || ! empty($validated['opening_expiry_date']))) {
+            throw ValidationException::withMessages([
+                'batch_tracking' => ['Batch number or expiry can be entered only when batch tracking is enabled.'],
+            ]);
+        }
+        if ($openingQuantity <= 0 && ! empty($validated['opening_batch_number'])) {
+            throw ValidationException::withMessages([
+                'opening_batch_number' => ['An opening batch requires opening stock quantity.'],
+            ]);
+        }
+    }
+
+    private function normalizeIdentifiers(Request $request): void
+    {
+        foreach (['name', 'sku', 'barcode', 'hsn_sac', 'unit_code', 'opening_batch_number'] as $field) {
+            if (is_string($request->input($field))) {
+                $value = trim($request->input($field));
+                if ($field === 'sku') {
+                    $value = strtoupper($value);
+                }
+                $request->merge([$field => $value !== '' ? $value : null]);
+            }
         }
     }
 

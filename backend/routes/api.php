@@ -30,8 +30,8 @@ use Illuminate\Support\Facades\Route;
 
 // Public routes
 Route::get('/health', fn () => response()->json(['status' => 'ok']));
-Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register'])->middleware('throttle:10,1');
+Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:5,1');
 
 // Protected routes (Sanctum)
 Route::middleware('auth:sanctum')->group(function () {
@@ -51,8 +51,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/ai-accountant/conversations', [AiAccountantController::class, 'conversations']);
         Route::get('/ai-accountant/conversations/{conversation}', [AiAccountantController::class, 'conversation']);
         Route::delete('/ai-accountant/conversations/{conversation}', [AiAccountantController::class, 'deleteConversation']);
-        Route::post('/ai-accountant/chat', [AiAccountantController::class, 'chat']);
-        Route::post('/ai-accountant/confirm', [AiAccountantController::class, 'confirm']);
+        Route::post('/ai-accountant/chat', [AiAccountantController::class, 'chat'])->middleware('throttle:30,1');
+        Route::post('/ai-accountant/confirm', [AiAccountantController::class, 'confirm'])->middleware('throttle:30,1');
         Route::get('/reports/{report}', [ReportsController::class, 'show']);
         Route::get('/support-requests', [SupportRequestController::class, 'index']);
         Route::post('/support-requests', [SupportRequestController::class, 'store']);

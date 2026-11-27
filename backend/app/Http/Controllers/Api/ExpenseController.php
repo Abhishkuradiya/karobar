@@ -250,6 +250,7 @@ class ExpenseController extends Controller
             'claim_input_tax_credit' => ['required', 'boolean'],
             'payment_method' => ['required', Rule::in(self::PAYMENT_METHODS)],
             'bank_account_id' => [
+                'required_if:payment_method,bank',
                 'nullable',
                 'integer',
                 Rule::exists('bank_accounts', 'id')->where(fn (QueryBuilder $query) => $query
@@ -258,7 +259,7 @@ class ExpenseController extends Controller
                     ->where('is_active', true)
                     ->whereNull('deleted_at')),
             ],
-            'expense_date' => ['required', 'date_format:Y-m-d'],
+            'expense_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'supplier_id' => [
                 'nullable',
                 'integer',

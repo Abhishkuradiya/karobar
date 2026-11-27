@@ -100,9 +100,10 @@ class ReturnNoteController extends Controller
         $validated = $request->validate([
             'sale_id' => [$type === 'credit' ? 'required' : 'prohibited', 'integer'],
             'purchase_id' => [$type === 'debit' ? 'required' : 'prohibited', 'integer'],
-            'note_date' => ['required', 'date_format:Y-m-d'],
+            'note_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'settlement_method' => ['required', Rule::in(self::SETTLEMENTS)],
             'bank_account_id' => [
+                'required_if:settlement_method,bank',
                 'nullable',
                 'integer',
                 Rule::exists('bank_accounts', 'id')->where(fn (QueryBuilder $query) => $query

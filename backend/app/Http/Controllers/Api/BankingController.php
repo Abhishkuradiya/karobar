@@ -32,6 +32,7 @@ class BankingController extends Controller
 
     public function store(Request $request): JsonResponse
     {
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->rules());
         $user = $request->user();
         $account = BankAccount::create([
@@ -52,6 +53,7 @@ class BankingController extends Controller
     public function update(Request $request, int $account): JsonResponse
     {
         $record = $this->ownedAccount($request, $account);
+        $this->normalizeIdentifiers($request);
         $validated = $request->validate($this->rules());
         $record->update([
             'name' => trim($validated['name']),
@@ -71,7 +73,7 @@ class BankingController extends Controller
         $record = $this->ownedAccount($request, $account);
         if ($record->statementTransactions()->exists()) {
             throw ValidationException::withMessages([
-                'account' => ['This account has imported statement history and cannot be archived.'],
+                'account' => ['This account has imported statement history and cannot be deleted.'],
             ]);
         }
 
@@ -329,9 +331,9 @@ class BankingController extends Controller
                 }
                 $date = $this->parseDate((string) ($columns[$dateColumn] ?? ''));
                 $description = trim((string) ($columns[$descriptionColumn] ?? ''));
-                if (! $date || $description === '') {
+                if (! $date || $date > now()->toDateString() || $description === '') {
                     throw ValidationException::withMessages([
-                        'statement' => ["Row {$lineNumber} must include a valid date and description."],
+                        'statement' => ["Row {$lineNumber} must include a valid non-future date and description."],
                     ]);
                 }
                 if ($amountColumn !== null) {
@@ -411,7 +413,12 @@ class BankingController extends Controller
             throw ValidationException::withMessages(['statement' => ['A CSV amount is not a valid number.']]);
         }
 
-        return round((float) $clean, 2);
+        $amount = round((float) $clean, 2);
+        if (abs($amount) > 999999999999.99) {
+            throw ValidationException::withMessages(['statement' => ['A CSV amount exceeds the allowed limit.']]);
+        }
+
+        return $amount;
     }
 
     private function ownedAccount(Request $request, int $id): BankAccount
@@ -428,9 +435,27 @@ class BankingController extends Controller
         return [
             'name' => ['required', 'string', 'max:100'],
             'bank_name' => ['required', 'string', 'max:100'],
-            'account_number' => ['nullable', 'string', 'min:4', 'max:40'],
-            'ifsc' => ['nullable', 'string', 'max:11', 'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/'],
+            'account_number' => ['nullable', 'digits_between:4,40'],
+            'ifsc' => ['nullable', 'string', 'size:11', 'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/'],
             'upi_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$/'],
         ];
+    }
+
+    private function normalizeIdentifiers(Request $request): void
+    {
+        foreach (['name', 'bank_name', 'ifsc', 'upi_id'] as $field) {
+            if (is_string($request->input($field))) {
+                $value = trim($request->input($field));
+                if ($field === 'ifsc') {
+                    $value = strtoupper($value);
+                }
+                $request->merge([$field => $value !== '' ? $value : null]);
+            }
+        }
+
+        if (is_string($request->input('account_number'))) {
+            $accountNumber = preg_replace('/\s+/', '', trim($request->input('account_number')));
+            $request->merge(['account_number' => $accountNumber !== '' ? $accountNumber : null]);
+        }
     }
 }

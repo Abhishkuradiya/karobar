@@ -71,12 +71,12 @@ class JournalController extends Controller
     public function store(Request $request, JournalPostingService $posting): JsonResponse
     {
         $validated = $request->validate([
-            'entry_date' => ['required', 'date_format:Y-m-d'],
+            'entry_date' => ['required', 'date_format:Y-m-d', 'before_or_equal:today'],
             'narration' => ['required', 'string', 'max:255'],
             'lines' => ['required', 'array', 'min:2', 'max:50'],
             'lines.*.account_code' => ['required', 'string', 'max:40'],
-            'lines.*.debit' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
-            'lines.*.credit' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99'],
+            'lines.*.debit' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
+            'lines.*.credit' => ['nullable', 'numeric', 'min:0', 'max:999999999999.99', 'decimal:0,2'],
         ]);
         $businessId = $request->user()->activeBusiness->id;
         $lines = [];

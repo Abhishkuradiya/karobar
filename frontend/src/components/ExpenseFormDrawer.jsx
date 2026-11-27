@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import api from '../api/axios';
 import { getErrorMessage, formatMoney } from '../utils/format';
 import { expenseCategories, quickExpenseCategories, moreExpenseCategories } from '../utils/expenseCategories';
+import MessageBanner from './MessageBanner';
 
 const paymentOptions = [
   { value: 'cash', label: 'Cash', icon: 'bx-money' },
@@ -126,9 +127,9 @@ export default function ExpenseFormDrawer({ expense, scanBill, onClose, onSaved 
           </div>
 
           <div className="expense-drawer-content">
-            {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
-            {supplierError && <div className="alert alert-warning py-2" role="alert">{supplierError} You can still save this expense without a supplier.</div>}
-            {bankError && <div className="alert alert-warning py-2" role="alert">{bankError}</div>}
+            <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
+            <MessageBanner message={supplierError ? `${supplierError} You can still save this expense without a supplier.` : ''} type="warning" onDismiss={() => setSupplierError('')} />
+            <MessageBanner message={bankError} type="warning" onDismiss={() => setBankError('')} />
 
             {scanBill && (
               <div className="expense-attachment-note">
@@ -238,7 +239,7 @@ export default function ExpenseFormDrawer({ expense, scanBill, onClose, onSaved 
                 <input type="date" name="expense_date" value={form.expense_date} onChange={updateField} required />
               </label>
               <label className="field-label">
-                Supplier <span className="optional-label">Optional</span>
+                Supplier
                 <select name="supplier_id" value={form.supplier_id} onChange={updateField} disabled={loadingSuppliers}>
                   <option value="">{loadingSuppliers ? 'Loading suppliers…' : 'No supplier'}</option>
                   {suppliers.map((supplier) => <option key={supplier.id} value={supplier.id}>{supplier.name}</option>)}
@@ -247,7 +248,7 @@ export default function ExpenseFormDrawer({ expense, scanBill, onClose, onSaved 
             </div>
 
             <label className="field-label">
-              Note <span className="optional-label">Optional</span>
+              Note
               <input name="note" value={form.note} onChange={updateField} maxLength="2000" placeholder="e.g. September shop rent" />
             </label>
           </div>

@@ -141,6 +141,19 @@ class AccountingWorkspaceApiTest extends TestCase
         $this->assertDatabaseHas('chart_accounts', ['id' => $account->id]);
     }
 
+    public function test_opening_balances_reject_duplicate_accounts(): void
+    {
+        $this->authenticatedUser();
+
+        $this->putJson('/api/opening-balances', [
+            'opening_date' => now()->toDateString(),
+            'balances' => [
+                ['account_code' => 'cash', 'amount' => 100, 'side' => 'debit'],
+                ['account_code' => 'cash', 'amount' => 50, 'side' => 'debit'],
+            ],
+        ])->assertUnprocessable()->assertJsonValidationErrors('balances.1.account_code');
+    }
+
     public function test_manual_journal_requires_balanced_lines_and_lists_the_posted_entry(): void
     {
         $this->authenticatedUser();
@@ -170,6 +183,20 @@ class AccountingWorkspaceApiTest extends TestCase
             ->assertJsonPath('meta.total', 1)
             ->assertJsonPath('summary.debits', 100)
             ->assertJsonPath('summary.credits', 100);
+    }
+
+    public function test_manual_journal_rejects_future_dates(): void
+    {
+        $this->authenticatedUser();
+
+        $this->postJson('/api/journal-entries', [
+            'entry_date' => now()->addDay()->toDateString(),
+            'narration' => 'Future journal',
+            'lines' => [
+                ['account_code' => 'cash', 'debit' => 100, 'credit' => 0],
+                ['account_code' => 'opening_balance_equity', 'debit' => 0, 'credit' => 100],
+            ],
+        ])->assertUnprocessable()->assertJsonValidationErrors('entry_date');
     }
 
     public function test_cash_tally_posts_the_difference_to_cash_and_disallows_duplicate_dates(): void

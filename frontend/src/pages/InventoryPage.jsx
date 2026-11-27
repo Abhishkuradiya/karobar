@@ -4,6 +4,8 @@ import api from '../api/axios';
 import { formatMoney, getErrorMessage } from '../utils/format';
 import PaginationControls from '../components/PaginationControls';
 import './inventory-banking-invoices.css';
+import { useFeedback } from '../context/FeedbackContext';
+import MessageBanner from '../components/MessageBanner';
 
 const gstRates = ['0', '0.25', '3', '5', '12', '18', '28', '40'];
 const emptyProduct = () => ({
@@ -20,6 +22,7 @@ const tabs = [
 ];
 
 export default function InventoryPage({ initialTab = 'products' }) {
+  const { confirm } = useFeedback();
   const { pathname } = useLocation();
   const routeTab = pathname === '/inventory/reorder' ? 'reorder' : pathname === '/inventory/expiry' ? 'expiring' : initialTab;
   const [tab, setTab] = useState(routeTab);
@@ -82,7 +85,7 @@ export default function InventoryPage({ initialTab = 'products' }) {
 
   const updateProductField = (event) => {
     const { name, value, type, checked } = event.target;
-    setProductForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : value }));
+    setProductForm((current) => ({ ...current, [name]: type === 'checkbox' ? checked : name === 'sku' ? value.toUpperCase() : value }));
   };
 
   const openNewProduct = () => {
@@ -156,7 +159,7 @@ export default function InventoryPage({ initialTab = 'products' }) {
   };
 
   const deleteCategory = async (category) => {
-    if (!window.confirm(`Remove "${category.name}"? Products in this category will remain in inventory.`)) return;
+    if (!await confirm({ title: 'Delete this category?', message: `Products in ${category.name} will remain in inventory.`, confirmLabel: 'Delete category' })) return;
     try {
       await api.delete(`/inventory/categories/${category.id}`);
       setCategories((current) => current.filter((item) => item.id !== category.id));
@@ -166,15 +169,15 @@ export default function InventoryPage({ initialTab = 'products' }) {
     }
   };
 
-  const archiveProduct = async (product) => {
-    if (!window.confirm(`Archive ${product.name}? This is only allowed when its stock is zero.`)) return;
+  const deleteProduct = async (product) => {
+    if (!await confirm({ title: 'Delete this product?', message: `${product.name} can be deleted only when its stock is zero.`, confirmLabel: 'Delete product' })) return;
     setError('');
     try {
       await api.delete(`/inventory/products/${product.id}`);
-      setNotice(`${product.name} was archived.`);
+      setNotice(`${product.name} was deleted.`);
       await loadProducts();
     } catch (requestError) {
-      setError(getErrorMessage(requestError, 'Could not archive this product.'));
+      setError(getErrorMessage(requestError, 'Could not delete this product.'));
     }
   };
 
@@ -208,8 +211,8 @@ export default function InventoryPage({ initialTab = 'products' }) {
         {tab === 'products' && <button className="btn btn-primary" type="button" onClick={openNewProduct}><i className="bx bx-plus me-1" /> Add product</button>}
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}<button type="button" className="btn-close float-end" aria-label="Dismiss" onClick={() => setNotice('')} /></div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="inventory-tabs" role="tablist" aria-label="Inventory views">
         {tabs.map((item) => (
@@ -240,16 +243,16 @@ export default function InventoryPage({ initialTab = 'products' }) {
             {loading ? <div className="loading-state"><span className="spinner-border spinner-border-sm text-primary" /> Loading products…</div> : products.length === 0 ? (
               <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-cube" /></span><h3>No products found</h3><p>Add goods or services to track their price, GST and stock status.</p><button className="btn btn-primary" type="button" onClick={openNewProduct}>Add your first product</button></div>
             ) : (
-              <><div className="table-responsive"><table className="business-table"><thead><tr><th>Product</th><th>Category</th><th>GST</th><th className="text-end">Purchase</th><th className="text-end">Selling</th><th className="text-end">On hand</th><th>Status</th><th /></tr></thead><tbody>
-                {products.map((product) => {
+              <><div className="table-responsive"><table className="business-table"><thead><tr><th>S.No.</th><th>Product</th><th>Category</th><th>GST</th><th className="text-end">Purchase</th><th className="text-end">Selling</th><th className="text-end">On hand</th><th>Status</th><th /></tr></thead><tbody>
+                {products.map((product, index) => {
                   const low = product.track_stock && product.low_stock_threshold !== null && Number(product.current_stock) <= Number(product.low_stock_threshold);
-                  return <tr key={product.id}>
+                  return <tr key={product.id}><td>{(page - 1) * (meta.per_page || 50) + index + 1}</td>
                     <td><strong>{product.name}</strong><small className="table-subtext">{product.sku ? `SKU ${product.sku}` : product.hsn_sac ? `HSN ${product.hsn_sac}` : product.is_service ? 'Service' : 'No SKU'}</small></td>
                     <td>{product.category?.name || '—'}</td><td>{Number(product.gst_rate)}%</td>
                     <td className="text-end">{formatMoney(product.purchase_price)}</td><td className="text-end">{formatMoney(product.selling_price)}</td>
                     <td className="text-end">{product.track_stock ? `${Number(product.current_stock).toLocaleString()} ${product.unit_code || ''}` : 'Not tracked'}</td>
                     <td><span className={`inventory-status ${low ? 'is-low' : 'is-good'}`}>{product.is_service ? 'Service' : low ? 'Reorder' : 'In stock'}</span></td>
-                    <td><div className="table-actions">{product.track_stock && <button className="icon-button" type="button" title="Adjust stock" aria-label={`Adjust ${product.name} stock`} onClick={() => { setStockProduct(product); setStockCount(String(product.current_stock)); setStockNotes(''); }}><i className="bx bx-transfer" /></button>}<button className="icon-button" type="button" title="Edit product" aria-label={`Edit ${product.name}`} onClick={() => openEditProduct(product)}><i className="bx bx-edit-alt" /></button><button className="icon-button danger-icon" type="button" title="Archive product" aria-label={`Archive ${product.name}`} onClick={() => archiveProduct(product)}><i className="bx bx-archive" /></button></div></td>
+                    <td><div className="table-actions">{product.track_stock && <button className="icon-button" type="button" title="Adjust stock" aria-label={`Adjust ${product.name} stock`} onClick={() => { setStockProduct(product); setStockCount(String(product.current_stock)); setStockNotes(''); }}><i className="bx bx-transfer" /></button>}<button className="icon-button" type="button" title="Edit product" aria-label={`Edit ${product.name}`} onClick={() => openEditProduct(product)}><i className="bx bx-edit-alt" /></button><button className="icon-button danger-icon" type="button" title="Delete product" aria-label={`Delete ${product.name}`} onClick={() => deleteProduct(product)}><i className="bx bx-trash" /></button></div></td>
                   </tr>;
                 })}
               </tbody></table></div><PaginationControls page={page} meta={meta} onChange={(nextPage) => { setLoading(true); setPage(nextPage); }} /></>
@@ -273,7 +276,7 @@ export default function InventoryPage({ initialTab = 'products' }) {
           <label className="inventory-field">Low-stock alert<input type="number" min="0" step="0.001" name="low_stock_threshold" value={productForm.low_stock_threshold} onChange={updateProductField} /></label>
         </div>
         <div className="inventory-switches"><label><input type="checkbox" name="is_service" checked={productForm.is_service} onChange={(event) => setProductForm((current) => ({ ...current, is_service: event.target.checked, track_stock: event.target.checked ? false : current.track_stock }))} /><span><strong>This is a service</strong><small>Services do not use stock tracking.</small></span></label><label><input type="checkbox" name="track_stock" checked={productForm.track_stock && !productForm.is_service} disabled={productForm.is_service} onChange={updateProductField} /><span><strong>Track stock</strong><small>Deduct quantities when sold and receive stock on purchases.</small></span></label><label><input type="checkbox" name="batch_tracking" checked={productForm.batch_tracking} onChange={updateProductField} /><span><strong>Track batch and expiry</strong><small>Record batch numbers and expiry dates on purchases.</small></span></label></div>
-        {productModal.mode === 'create' && productForm.track_stock && !productForm.is_service && <div className="inventory-opening-stock"><h3>Opening stock <small>Optional</small></h3><div className="inventory-form-grid"><label className="inventory-field">Quantity on hand<input type="number" min="0" step="0.001" name="opening_quantity" value={productForm.opening_quantity} onChange={updateProductField} /></label><label className="inventory-field">Unit cost<input type="number" min="0" step="0.01" name="opening_unit_cost" value={productForm.opening_unit_cost} onChange={updateProductField} /></label><label className="inventory-field">Batch number<input name="opening_batch_number" value={productForm.opening_batch_number} onChange={updateProductField} /></label><label className="inventory-field">Expiry date<input type="date" name="opening_expiry_date" value={productForm.opening_expiry_date} onChange={updateProductField} /></label></div><small>Opening stock is posted against opening-balance equity.</small></div>}
+        {productModal.mode === 'create' && productForm.track_stock && !productForm.is_service && <div className="inventory-opening-stock"><h3>Opening stock</h3><div className="inventory-form-grid"><label className="inventory-field">Quantity on hand<input type="number" min="0" step="0.001" name="opening_quantity" value={productForm.opening_quantity} onChange={updateProductField} /></label><label className="inventory-field">Unit cost<input type="number" min="0" step="0.01" name="opening_unit_cost" value={productForm.opening_unit_cost} onChange={updateProductField} /></label><label className="inventory-field">Batch number<input name="opening_batch_number" value={productForm.opening_batch_number} onChange={updateProductField} /></label><label className="inventory-field">Expiry date<input type="date" name="opening_expiry_date" value={productForm.opening_expiry_date} onChange={updateProductField} /></label></div><small>Opening stock is posted against opening-balance equity.</small></div>}
         {error && <div className="alert alert-danger py-2 mt-3">{error}</div>}
       </div><div className="inventory-modal-footer"><button className="btn btn-outline-secondary" type="button" onClick={() => setProductModal(null)}>Cancel</button><button className="btn btn-primary" type="submit" disabled={saving}>{saving ? 'Saving…' : 'Save product'}</button></div></form></section></div>}
 

@@ -40,7 +40,8 @@ class SupplierController extends Controller
             ->withSum(['purchases as purchase_balance_due' => fn (Builder $query) => $query->where('business_id', $businessId)], 'balance_due')
             ->withSum(['expenses as expense_balance_due' => fn (Builder $query) => $query->where('business_id', $businessId)], 'balance_due')
             ->withCount(['purchases' => fn (Builder $query) => $query->where('business_id', $businessId)])
-            ->orderBy('name')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
             ->paginate($validated['per_page'] ?? 15)
             ->withQueryString();
 
@@ -104,10 +105,19 @@ class SupplierController extends Controller
 
     private function normalizeIdentifiers(Request $request): void
     {
+        if (is_string($request->input('name'))) {
+            $request->merge(['name' => trim($request->input('name'))]);
+        }
         foreach (['gstin', 'udyam_number'] as $field) {
             if (is_string($request->input($field))) {
                 $request->merge([$field => strtoupper(trim($request->input($field))) ?: null]);
             }
+        }
+        if (is_string($request->input('mobile'))) {
+            $request->merge(['mobile' => trim($request->input('mobile')) ?: null]);
+        }
+        if (is_string($request->input('email'))) {
+            $request->merge(['email' => strtolower(trim($request->input('email'))) ?: null]);
         }
     }
 
@@ -145,16 +155,38 @@ class SupplierController extends Controller
         if ($supplier) {
             $gstinUnique->ignore($supplier->id);
         }
+        $mobileUnique = Rule::unique('suppliers', 'mobile')
+            ->where(fn (QueryBuilder $query) => $query
+                ->where('user_id', $user->id)
+                ->where('business_id', $businessId)
+                ->whereNull('deleted_at'));
+        if ($supplier) {
+            $mobileUnique->ignore($supplier->id);
+        }
+        $emailUnique = Rule::unique('suppliers', 'email')
+            ->where(fn (QueryBuilder $query) => $query
+                ->where('user_id', $user->id)
+                ->whereNull('deleted_at'));
+        if ($supplier) {
+            $emailUnique->ignore($supplier->id);
+        }
+        $udyamUnique = Rule::unique('suppliers', 'udyam_number')
+            ->where(fn (QueryBuilder $query) => $query
+                ->where('business_id', $businessId)
+                ->whereNull('deleted_at'));
+        if ($supplier) {
+            $udyamUnique->ignore($supplier->id);
+        }
 
         $msmeType = $request->input('msme_type', $supplier?->msme_type ?? 'not_known');
         $maxCreditDays = in_array($msmeType, ['micro', 'small'], true) ? 45 : 3650;
 
         return [
             'name' => ['required', 'string', 'max:150'],
-            'mobile' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+()\\-\\s]{7,30}$/'],
+            'mobile' => ['nullable', 'digits:10', $mobileUnique],
             'credit_days' => ['required', 'integer', 'min:0', "max:{$maxCreditDays}"],
             'msme_type' => ['required', Rule::in(self::MSME_TYPES)],
-            'udyam_number' => ['nullable', 'string', 'max:30', 'regex:/^UDYAM-[A-Z]{2}-\\d{2}-\\d{7}$/'],
+            'udyam_number' => ['nullable', 'string', 'max:30', 'regex:/^UDYAM-[A-Z]{2}-\\d{2}-\\d{7}$/', $udyamUnique],
             'gstin' => [
                 'nullable',
                 'string',
@@ -163,7 +195,7 @@ class SupplierController extends Controller
                 $gstinUnique,
             ],
             'state' => ['nullable', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:254'],
+            'email' => ['nullable', 'email', 'max:254', $emailUnique],
             'address' => ['nullable', 'string', 'max:2000'],
         ];
     }

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import api from '../api/axios';
 import { useAuth } from '../context/useAuth';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
+import MessageBanner from '../components/MessageBanner';
 
 export default function Dashboard() {
   const { activeBusiness } = useAuth();
@@ -51,7 +52,7 @@ function DashboardContent() {
         <Link className="btn btn-primary" to="/sales/new"><i className="bx bx-plus me-1" /> Record a sale</Link>
       </div>
 
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="summary-grid dashboard-summary-grid">
         <article className="summary-card">
@@ -113,11 +114,11 @@ function DashboardContent() {
           ) : (
             <div className="table-responsive">
               <table className="business-table">
-                <thead><tr><th>Type</th><th>Date</th><th>Party / category</th><th>Reference</th><th className="text-end">Amount</th></tr></thead>
+                <thead><tr><th>S.No.</th><th>Type</th><th>Date</th><th>Party / category</th><th>Reference</th><th className="text-end">Amount</th></tr></thead>
                 <tbody>
-                  {recentTransactions.map((transaction) => (
+                  {recentTransactions.map((transaction, index) => (
                     <tr key={`${transaction.type}-${transaction.id}`}>
-                      <td><span className={`payment-badge payment-${transaction.type}`}>{transaction.title}</span></td>
+                      <td>{index + 1}</td><td><span className={`payment-badge payment-${transaction.type}`}>{transaction.title}</span></td>
                       <td>{formatDate(transaction.date)}</td>
                       <td>{transaction.party}</td>
                       <td>{transaction.reference}</td>

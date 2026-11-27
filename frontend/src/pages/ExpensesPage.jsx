@@ -2,8 +2,10 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import ExpenseFormDrawer from '../components/ExpenseFormDrawer';
 import api from '../api/axios';
+import MessageBanner from '../components/MessageBanner';
 import { formatDate, formatMoney, getErrorMessage } from '../utils/format';
 import { getExpenseCategoryLabel } from '../utils/expenseCategories';
+import { useFeedback } from '../context/FeedbackContext';
 
 const emptyMeta = { current_page: 1, last_page: 1, total: 0 };
 const paymentLabels = {
@@ -15,6 +17,7 @@ const paymentLabels = {
 };
 
 export default function ExpensesPage() {
+  const { confirm } = useFeedback();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const queryString = searchParams.toString();
@@ -133,7 +136,7 @@ export default function ExpensesPage() {
   };
 
   const deleteExpense = async (expense) => {
-    if (!window.confirm(`Delete ${expense.expense_number}? Its journal entry will be reversed.`)) return;
+    if (!await confirm({ title: 'Delete this expense?', message: `${expense.expense_number} will be deleted and its journal entry reversed.`, confirmLabel: 'Delete expense' })) return;
 
     setNotice('');
     setError('');
@@ -159,8 +162,8 @@ export default function ExpensesPage() {
         </button>
       </div>
 
-      {notice && <div className="alert alert-success py-2" role="status">{notice}</div>}
-      {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
+      <MessageBanner message={notice} onDismiss={() => setNotice('')} />
+      <MessageBanner message={error} type="error" onDismiss={() => setError('')} />
 
       <div className="summary-grid summary-grid-two">
         <article className="summary-card">
@@ -217,7 +220,7 @@ export default function ExpensesPage() {
               <table className="business-table">
                 <thead>
                   <tr>
-                    <th>Expense</th>
+                    <th>S.No.</th><th>Expense</th>
                     <th>Date</th>
                     <th>Supplier / note</th>
                     <th>Paid by</th>
@@ -227,8 +230,9 @@ export default function ExpensesPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {expenses.map((expense) => (
+                  {expenses.map((expense, index) => (
                     <tr key={expense.id}>
+                      <td>{(page - 1) * (meta.per_page || 15) + index + 1}</td>
                       <td>
                         <strong>{getExpenseCategoryLabel(expense.category)}</strong>
                         <small className="table-subtext">{expense.expense_number}</small>
