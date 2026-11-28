@@ -257,8 +257,12 @@ PROMPT;
         $previousProfit = (float) $context['periods']['previous_month']['sales'] - (float) $context['periods']['previous_month']['purchases'] - (float) $context['periods']['previous_month']['expenses'];
 
         if (preg_match('/\b(profit|p&l|p\s*and\s*l|munafa|munafaa|faayda|faida|loss|nuksaan)\b/u', $lower)) {
-            $change = $previousProfit == 0.0 ? null : (($profit - $previousProfit) / abs($previousProfit)) * 100;
-            $comparison = $change === null ? 'There is no comparable previous-month profit figure.' : sprintf('%s compared with last month.', ($change >= 0 ? '+' : '').number_format($change, 1).'%');
+            $change = $previousProfit == 0.0 ? null : abs((($profit - $previousProfit) / abs($previousProfit)) * 100);
+            $comparison = $change === null
+                ? ($profit == 0.0 ? 'Profit was unchanged because there is no recorded profit in either period.' : 'Profit increased from a zero previous-month baseline.')
+                : (abs($profit - $previousProfit) < 0.005
+                    ? 'Profit was unchanged compared with last month.'
+                    : sprintf('Profit %s by %s%% compared with last month.', $profit > $previousProfit ? 'increased' : 'decreased', number_format($change, 1)));
             return ['message' => ucfirst($periodLabel).' profit estimate is '.$money($profit).".\nSales: ".$money($sales).' · Purchases: '.$money($purchases).' · Expenses: '.$money($expenses).".\n".$comparison.' This is calculated from recorded entries for '.$period['from'].' to '.$period['to'].'.'];
         }
         if (preg_match('/\b(today|aaj)\b.*\b(sale|sales|bikri)\b|\b(sale|sales|bikri)\b.*\b(today|aaj)\b/u', $lower)) {

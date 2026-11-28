@@ -100,6 +100,7 @@ return new class extends Migration
                 $table->foreignId('business_id')->constrained()->cascadeOnDelete();
                 $table->string('name', 100);
                 $table->string('bank_name', 100);
+                $table->text('account_number')->nullable();
                 $table->string('account_last4', 4)->nullable();
                 $table->string('ifsc', 11)->nullable();
                 $table->string('upi_id', 100)->nullable();

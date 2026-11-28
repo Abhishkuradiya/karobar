@@ -220,7 +220,7 @@ class InventoryController extends Controller
     public function storeCategory(Request $request): JsonResponse
     {
         if (is_string($request->input('name'))) {
-            $request->merge(['name' => trim($request->input('name'))]);
+            $request->merge(['name' => $this->formatCategoryName($request->input('name'))]);
         }
         $validated = $request->validate([
             'name' => [
@@ -245,10 +245,15 @@ class InventoryController extends Controller
         $category = ProductCategory::create([
             'user_id' => $user->id,
             'business_id' => $businessId,
-            'name' => trim($validated['name']),
+            'name' => $this->formatCategoryName($validated['name']),
         ]);
 
         return response()->json($category, 201);
+    }
+
+    private function formatCategoryName(string $name): string
+    {
+        return mb_convert_case(trim(preg_replace('/\s+/', ' ', $name)), MB_CASE_TITLE, 'UTF-8');
     }
 
     public function destroyCategory(Request $request, int $category): JsonResponse

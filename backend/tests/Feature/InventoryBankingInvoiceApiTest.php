@@ -63,7 +63,8 @@ class InventoryBankingInvoiceApiTest extends TestCase
     {
         $this->authenticatedUser();
 
-        $this->postJson('/api/inventory/categories', ['name' => 'Electronics'])->assertCreated();
+        $this->postJson('/api/inventory/categories', ['name' => 'electronics'])
+            ->assertCreated()->assertJsonPath('name', 'Electronics');
         $this->postJson('/api/inventory/categories', ['name' => 'electronics'])
             ->assertUnprocessable()->assertJsonValidationErrors('name');
     }
@@ -425,10 +426,16 @@ class InventoryBankingInvoiceApiTest extends TestCase
             'name' => 'Operating account',
             'bank_name' => 'Example Bank',
             'account_number' => '123456789012',
+            'ifsc' => 'HDFC0001234',
+            'upi_id' => 'operating@examplebank',
         ])->assertCreated()
             ->assertJsonPath('account_last4', '9012')
             ->assertJsonMissingPath('account_number')
             ->json();
+        $this->assertDatabaseHas('bank_accounts', [
+            'id' => $account['id'],
+            'account_number' => '123456789012',
+        ]);
 
         $this->postJson('/api/sales', [
             'customer_id' => null,
@@ -467,6 +474,37 @@ class InventoryBankingInvoiceApiTest extends TestCase
             ->assertOk()
             ->assertJsonCount(0, 'statement_transactions')
             ->assertJsonCount(1, 'reconciled_transactions');
+    }
+
+    public function test_bank_account_number_cannot_be_reused_but_ifsc_can_be_shared(): void
+    {
+        $this->authenticatedUser();
+        $payload = [
+            'name' => 'Primary account',
+            'bank_name' => 'Example Bank',
+            'account_number' => '123456789012',
+            'ifsc' => 'HDFC0001234',
+        ];
+
+        $this->postJson('/api/banking/accounts', $payload)->assertCreated();
+
+        $this->postJson('/api/banking/accounts', array_replace($payload, [
+            'name' => 'Duplicate number',
+            'ifsc' => 'SBIN0001234',
+        ]))->assertUnprocessable()->assertJsonValidationErrors('account_number');
+
+        $this->postJson('/api/banking/accounts', array_replace($payload, [
+            'name' => 'Duplicate IFSC',
+            'account_number' => '987654321098',
+        ]))->assertCreated();
+
+        $deletable = $this->postJson('/api/banking/accounts', array_replace($payload, [
+            'name' => 'Deletable account',
+            'account_number' => '111122223333',
+            'ifsc' => 'ICIC0001234',
+        ]))->assertCreated()->json();
+        $this->deleteJson("/api/banking/accounts/{$deletable['id']}")->assertNoContent();
+        $this->assertDatabaseMissing('bank_accounts', ['id' => $deletable['id']]);
     }
 
     private function authenticatedUser(): User

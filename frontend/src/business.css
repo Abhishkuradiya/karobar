@@ -659,6 +659,17 @@ textarea {
   letter-spacing: -0.03em;
 }
 
+.summary-card .comparison-value {
+  max-width: 110px;
+  color: #28273d;
+  font-size: 21px;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.summary-card .comparison-increase { color: #16845d; }
+.summary-card .comparison-decrease { color: #c24d4d; }
+
 .summary-footnote {
   position: absolute;
   right: 15px;

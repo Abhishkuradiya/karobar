@@ -1,0 +1,4 @@
+Date,Description,Amount,Type,Reference
+2026-11-25,Customer payment - test sale,1000,Credit,TEST-CR-001
+2026-11-26,Office expense - test withdrawal,250,Debit,TEST-DR-001
+2026-11-27,Customer payment - second test sale,500,Credit,TEST-CR-002

@@ -15,15 +15,24 @@ class BankAccount extends Model
         'business_id',
         'name',
         'bank_name',
+        'account_number',
+        'account_number_hash',
         'account_last4',
         'ifsc',
         'upi_id',
         'is_active',
     ];
 
+    protected $hidden = [
+        'account_number',
+        'account_number_hash',
+    ];
+
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+        ];
     }
 
     public function statementTransactions(): HasMany

@@ -33,6 +33,7 @@ class BankingController extends Controller
     public function store(Request $request): JsonResponse
     {
         $this->normalizeIdentifiers($request);
+        $this->ensureUniqueIdentifiers($request);
         $validated = $request->validate($this->rules());
         $user = $request->user();
         $account = BankAccount::create([
@@ -40,6 +41,8 @@ class BankingController extends Controller
             'business_id' => $user->activeBusiness->id,
             'name' => trim($validated['name']),
             'bank_name' => trim($validated['bank_name']),
+            'account_number' => $validated['account_number'] ?? null,
+            'account_number_hash' => hash('sha256', $validated['account_number']),
             'account_last4' => isset($validated['account_number'])
                 ? substr(preg_replace('/\s+/', '', $validated['account_number']), -4)
                 : null,
@@ -54,10 +57,17 @@ class BankingController extends Controller
     {
         $record = $this->ownedAccount($request, $account);
         $this->normalizeIdentifiers($request);
+        $this->ensureUniqueIdentifiers($request, $record);
         $validated = $request->validate($this->rules());
         $record->update([
             'name' => trim($validated['name']),
             'bank_name' => trim($validated['bank_name']),
+            'account_number' => array_key_exists('account_number', $validated)
+                ? ($validated['account_number'] ?? null)
+                : $record->account_number,
+            'account_number_hash' => array_key_exists('account_number', $validated)
+                ? hash('sha256', $validated['account_number'])
+                : $record->account_number_hash,
             'account_last4' => isset($validated['account_number'])
                 ? substr(preg_replace('/\s+/', '', $validated['account_number']), -4)
                 : $record->account_last4,
@@ -77,8 +87,7 @@ class BankingController extends Controller
             ]);
         }
 
-        $record->update(['is_active' => false]);
-        $record->delete();
+        $record->forceDelete();
 
         return response()->json(null, 204);
     }
@@ -435,10 +444,32 @@ class BankingController extends Controller
         return [
             'name' => ['required', 'string', 'max:100'],
             'bank_name' => ['required', 'string', 'max:100'],
-            'account_number' => ['nullable', 'digits_between:4,40'],
-            'ifsc' => ['nullable', 'string', 'size:11', 'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/'],
+            'account_number' => ['required', 'digits_between:4,40'],
+            'account_number_hash' => ['required', 'string', 'size:64'],
+            'ifsc' => [
+                'required',
+                'string',
+                'size:11',
+                'regex:/^[A-Za-z]{4}0[A-Za-z0-9]{6}$/',
+            ],
             'upi_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9._-]+@[A-Za-z0-9.-]+$/'],
         ];
+    }
+
+    private function ensureUniqueIdentifiers(Request $request, ?BankAccount $ignore = null): void
+    {
+        $query = BankAccount::query()
+            ->where('business_id', $request->user()->activeBusiness->id)
+            ->where('is_active', true)
+            ->whereNull('deleted_at');
+        if ($ignore) {
+            $query->where('id', '<>', $ignore->id);
+        }
+
+        if ($request->filled('account_number_hash') && (clone $query)->where('account_number_hash', $request->input('account_number_hash'))->exists()) {
+            throw ValidationException::withMessages(['account_number' => ['This account number already exists for this business.']]);
+        }
+
     }
 
     private function normalizeIdentifiers(Request $request): void
@@ -455,7 +486,10 @@ class BankingController extends Controller
 
         if (is_string($request->input('account_number'))) {
             $accountNumber = preg_replace('/\s+/', '', trim($request->input('account_number')));
-            $request->merge(['account_number' => $accountNumber !== '' ? $accountNumber : null]);
+            $request->merge([
+                'account_number' => $accountNumber !== '' ? $accountNumber : null,
+                'account_number_hash' => $accountNumber !== '' ? hash('sha256', $accountNumber) : null,
+            ]);
         }
     }
 }

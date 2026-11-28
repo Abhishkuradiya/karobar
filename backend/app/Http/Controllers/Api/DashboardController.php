@@ -67,7 +67,22 @@ class DashboardController extends Controller
         $sales = Sale::query()->where('user_id', $request->user()->id)->where('business_id', $businessId);
         $todayTotal = (float) (clone $sales)->whereDate('sale_date', $today)->sum('total');
         $yesterdayTotal = (float) (clone $sales)->whereDate('sale_date', $yesterday)->sum('total');
-        $change = $yesterdayTotal == 0.0 ? null : round((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100, 2);
+        $change = $yesterdayTotal == 0.0 ? null : round(abs((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100), 2);
+        $comparison = $yesterdayTotal == 0.0
+            ? ($todayTotal > 0 ? 'new_sales' : 'no_change')
+            : ($todayTotal > $yesterdayTotal ? 'increase' : ($todayTotal < $yesterdayTotal ? 'decrease' : 'no_change'));
+        $comparisonLabel = match ($comparison) {
+            'increase' => '↑ '.number_format($change, 2).'%',
+            'decrease' => '↓ '.number_format($change, 2).'%',
+            'new_sales' => '↑ New',
+            default => '— 0%',
+        };
+        $comparisonDetail = match ($comparison) {
+            'increase' => 'Sales increased by '.number_format($change, 2).'% vs yesterday',
+            'decrease' => 'Sales decreased by '.number_format($change, 2).'% vs yesterday',
+            'new_sales' => 'New sales today',
+            default => 'No change from yesterday',
+        };
 
         return response()->json([
             'date' => $today,
@@ -75,7 +90,9 @@ class DashboardController extends Controller
             'yesterday_sales' => round($yesterdayTotal, 2),
             'difference' => round($todayTotal - $yesterdayTotal, 2),
             'difference_percent' => $change,
-            'comparison' => $change === null ? ($todayTotal > 0 ? 'new_sales' : 'no_change') : ($change > 0 ? 'increase' : ($change < 0 ? 'decrease' : 'no_change')),
+            'comparison' => $comparison,
+            'comparison_label' => $comparisonLabel,
+            'comparison_detail' => $comparisonDetail,
         ]);
     }
 

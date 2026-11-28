@@ -345,7 +345,8 @@
 .bank-account-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
-  gap: 14px;
+  gap: 16px;
+  padding: 0 16px 16px;
 }
 
 .bank-account-card {
@@ -407,13 +408,34 @@
 
 .bank-account-card .account-actions {
   display: flex;
+  align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+}
+
+.bank-account-card .account-actions .btn {
+  align-items: center;
+  display: inline-flex;
+  min-height: 36px;
+}
+
+.bank-account-card .account-actions .bank-delete-button {
+  gap: 5px;
 }
 
 .bank-account-form,
 .return-note-form {
   display: grid;
   gap: 13px;
+}
+
+.bank-account-form .inventory-field {
+  display: block;
+}
+
+.bank-account-form .inventory-field > input {
+  display: block;
+  margin-top: 6px;
 }
 
 .return-note-actions {
@@ -434,6 +456,46 @@
   flex-wrap: wrap;
 }
 
+.banking-toolbar:has(.statement-upload) {
+  align-items: flex-start;
+}
+
+.banking-toolbar:has(.statement-upload) > div:first-child {
+  flex: 1 1 280px;
+}
+
+.reconciliation-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.reconciliation-counts span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 9px;
+  border: 1px solid #e4e6ef;
+  border-radius: 999px;
+  background: #fafaff;
+  color: #707991;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.banking-toolbar:has(.statement-upload) .statement-upload {
+  flex: 0 1 510px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #e5e7ef;
+  border-radius: 12px;
+  background: #fafbfe;
+}
+
 .statement-upload input[type="file"] {
   max-width: 260px;
   font-size: 0.85rem;
@@ -444,10 +506,16 @@
   color: #7b8498;
 }
 
+.banking-toolbar:has(.statement-upload) .statement-upload small {
+  grid-column: 1 / -1;
+  line-height: 1.4;
+}
+
 .reconciliation-split {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 18px;
+  padding: 0 14px 16px;
 }
 
 .reconciliation-column {
