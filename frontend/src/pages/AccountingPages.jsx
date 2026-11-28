@@ -243,7 +243,11 @@ export function ActivityPage() {
     return () => { active = false; };
   }, [filters, page, search]);
 
-  const applySearch = (event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); };
+  const updateSearch = (value) => {
+    setSearchInput(value);
+    setPage(1);
+    setSearch(value.trim());
+  };
 
   return (
     <section className="page-stack">
@@ -296,8 +300,12 @@ export function MonthEndClosePage() {
 
 export function JournalPage() {
   const [filters, setFilters] = useState({ from: '', to: '', account_code: '' });
+  const [searchInput, setSearchInput] = useState('');
+  const [search, setSearch] = useState('');
+  const [page, setPage] = useState(1);
   const [entries, setEntries] = useState([]);
   const [summary, setSummary] = useState({ count: 0, debits: 0, credits: 0 });
+  const [meta, setMeta] = useState({ current_page: 1, last_page: 1, total: 0 });
   const [accounts, setAccounts] = useState([]);
   const [modalOpen, setModalOpen] = useState(false);
   const [entryDate, setEntryDate] = useState(localToday);
@@ -313,35 +321,42 @@ export function JournalPage() {
   const updateFilters = (key, value) => {
     setLoading(true);
     setError('');
+    setPage(1);
     setFilters((current) => ({ ...current, [key]: value }));
   };
 
+  const journalParams = { from: filters.from || undefined, to: filters.to || undefined, account_code: filters.account_code || undefined, search: search || undefined, page, per_page: 25 };
+
   const load = useCallback(async () => {
     const [journalResponse, accountResponse] = await Promise.all([
-      api.get('/journal-entries', { params: { from: filters.from || undefined, to: filters.to || undefined, account_code: filters.account_code || undefined, per_page: 100 } }),
+      api.get('/journal-entries', { params: journalParams }),
       api.get('/chart-of-accounts'),
     ]);
     setEntries(journalResponse.data.data);
     setSummary(journalResponse.data.summary);
+    setMeta(journalResponse.data.meta);
     setAccounts(flattenAccounts(accountResponse.data.data));
-  }, [filters]);
+  }, [filters, search, page]);
 
   useEffect(() => {
     let active = true;
     Promise.all([
-      api.get('/journal-entries', { params: { from: filters.from || undefined, to: filters.to || undefined, account_code: filters.account_code || undefined, per_page: 100 } }),
+      api.get('/journal-entries', { params: journalParams }),
       api.get('/chart-of-accounts'),
     ])
       .then(([journalResponse, accountResponse]) => {
         if (!active) return;
         setEntries(journalResponse.data.data);
         setSummary(journalResponse.data.summary);
+        setMeta(journalResponse.data.meta);
         setAccounts(flattenAccounts(accountResponse.data.data));
       })
       .catch((requestError) => { if (active) setError(getErrorMessage(requestError, 'Could not load journal entries.')); })
       .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
-  }, [filters]);
+  }, [filters, search, page]);
+
+  const applySearch = (event) => { event.preventDefault(); setPage(1); setSearch(searchInput.trim()); };
 
   const debitTotal = useMemo(() => lines.reduce((total, line) => total + (Number(line.debit) || 0), 0), [lines]);
   const creditTotal = useMemo(() => lines.reduce((total, line) => total + (Number(line.credit) || 0), 0), [lines]);
@@ -380,8 +395,9 @@ export function JournalPage() {
       <PageAlerts error={error} notice={notice} onDismiss={() => setNotice('')} />
       <div className="summary-grid summary-grid-two"><SummaryCard icon="bx-notepad" label="Entries in view" value={summary.count} /><SummaryCard icon="bx-transfer-alt" label="Debits / credits" value={`${formatMoney(summary.debits)} / ${formatMoney(summary.credits)}`} tone="green" /></div>
       <section className="data-card">
-        <div className="data-card-toolbar accounting-activity-toolbar"><div><h2>Journal entries</h2><span className="muted-copy">Every entry is double-entry and business-scoped.</span></div><div className="accounting-date-filters"><label className="compact-field"><span>From</span><input type="date" value={filters.from} onChange={(event) => updateFilters('from', event.target.value)} /></label><label className="compact-field"><span>To</span><input type="date" value={filters.to} onChange={(event) => updateFilters('to', event.target.value)} /></label><label className="compact-field"><span>Account</span><select value={filters.account_code} onChange={(event) => updateFilters('account_code', event.target.value)}><option value="">All accounts</option>{accounts.map((account) => <option key={account.account_code} value={account.account_code}>{account.display_code} · {account.name}</option>)}</select></label></div></div>
-        {loading ? <div className="loading-state">Loading journal…</div> : entries.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-notepad" /></span><h3>No journal entries found</h3><p>Transactions posted for this business will appear here.</p></div> : <div className="table-responsive"><table className="business-table"><thead><tr><th>Date</th><th>Reference</th><th>Narration</th><th>Account lines</th><th className="text-end">Debit</th><th className="text-end">Credit</th></tr></thead><tbody>{entries.map((entry) => <tr key={entry.id}><td>{formatDate(entry.entry_date)}</td><td><span className="accounting-source-tag">{entry.source_type.replaceAll('_', ' ')}</span></td><td><strong>{entry.description}</strong><small className="table-subtext">Entry #{entry.id}</small></td><td><div className="accounting-journal-lines">{entry.lines.map((line) => { const account = accounts.find((item) => item.account_code === line.account_code); return <span key={line.id}>{account?.display_code || line.account_code} · {account?.name || 'Account'}</span>; })}</div></td><td className="text-end">{formatMoney(entry.debit_total)}</td><td className="text-end">{formatMoney(entry.credit_total)}</td></tr>)}</tbody></table></div>}
+        <div className="data-card-toolbar accounting-activity-toolbar journal-entry-toolbar"><div><h2>Journal entries</h2><span className="muted-copy">Every entry is double-entry and business-scoped.</span></div><div className="accounting-date-filters"><div className="journal-live-search"><i className="bx bx-search" /><input aria-label="Search journal entries" value={searchInput} onChange={(event) => updateSearch(event.target.value)} placeholder="Search narration or source" /></div><label className="compact-field"><span>From</span><input type="date" value={filters.from} onChange={(event) => updateFilters('from', event.target.value)} /></label><label className="compact-field"><span>To</span><input type="date" value={filters.to} onChange={(event) => updateFilters('to', event.target.value)} /></label><label className="compact-field"><span>Account</span><select value={filters.account_code} onChange={(event) => updateFilters('account_code', event.target.value)}><option value="">All accounts</option>{accounts.map((account) => <option key={account.account_code} value={account.account_code}>{account.display_code} · {account.name}</option>)}</select></label></div></div>
+        {loading ? <div className="loading-state">Loading journal…</div> : entries.length === 0 ? <div className="empty-state"><span className="empty-state-icon"><i className="bx bx-notepad" /></span><h3>No journal entries found</h3><p>Transactions posted for this business will appear here.</p></div> : <div className="table-responsive"><table className="business-table"><thead><tr><th>S.No.</th><th>Date</th><th>Reference</th><th>Narration</th><th>Account lines</th><th className="text-end">Debit</th><th className="text-end">Credit</th></tr></thead><tbody>{entries.map((entry, index) => <tr key={entry.id}><td>{(page - 1) * (meta.per_page || 25) + index + 1}</td><td>{formatDate(entry.entry_date)}</td><td><span className="accounting-source-tag">{entry.source_type.replaceAll('_', ' ')}</span>{entry.reversal_of_id && <small className="table-subtext">Reverses #{entry.reversal_of_id}</small>}</td><td><strong>{entry.description}</strong><small className="table-subtext">Entry #{entry.id}</small></td><td><div className="accounting-journal-lines accounting-journal-lines-detailed">{entry.lines.map((line) => { const account = accounts.find((item) => item.account_code === line.account_code); return <div className="accounting-journal-line" key={line.id}><span>{account?.display_code || line.account_code} · {account?.name || 'Account'}</span><span className="accounting-journal-line-amounts"><small>Dr {formatMoney(line.debit)}</small><small>Cr {formatMoney(line.credit)}</small></span></div>; })}</div></td><td className="text-end">{formatMoney(entry.debit_total)}</td><td className="text-end">{formatMoney(entry.credit_total)}</td></tr>)}</tbody></table></div>}
+        <PaginationControls page={page} meta={meta} onChange={(nextPage) => { setLoading(true); setPage(nextPage); }} />
       </section>
       {modalOpen && <div className="inventory-modal-backdrop"><section className="inventory-modal accounting-modal" role="dialog" aria-modal="true" aria-labelledby="journal-modal-title"><div className="inventory-modal-header"><div><span className="eyebrow">DOUBLE-ENTRY ADJUSTMENT</span><h2 id="journal-modal-title">New journal entry</h2></div><button className="icon-button" type="button" aria-label="Close" onClick={() => setModalOpen(false)}><i className="bx bx-x" /></button></div><form onSubmit={saveEntry}><div className="inventory-modal-body"><div className="accounting-journal-form"><label className="inventory-field">Entry date<input required type="date" value={entryDate} onChange={(event) => setEntryDate(event.target.value)} /></label><label className="inventory-field">Narration<input required maxLength="255" value={narration} onChange={(event) => setNarration(event.target.value)} placeholder="Reason for this adjustment" /></label><div className="accounting-edit-lines"><div className="accounting-edit-line accounting-edit-line-heading"><span>Account</span><span>Debit</span><span>Credit</span><span /></div>{lines.map((line, index) => <div className="accounting-edit-line" key={index}><select required aria-label={`Account for journal line ${index + 1}`} value={line.account_code} onChange={(event) => updateLine(index, 'account_code', event.target.value)}><option value="">Select account</option>{accounts.map((account) => <option key={account.account_code} value={account.account_code}>{account.display_code} · {account.name}</option>)}</select><input aria-label={`Debit for journal line ${index + 1}`} type="number" min="0" step="0.01" value={line.debit} onChange={(event) => updateLine(index, 'debit', event.target.value)} /><input aria-label={`Credit for journal line ${index + 1}`} type="number" min="0" step="0.01" value={line.credit} onChange={(event) => updateLine(index, 'credit', event.target.value)} /><button className="icon-button danger-icon" type="button" aria-label={`Remove journal line ${index + 1}`} disabled={lines.length <= 2} onClick={() => setLines((current) => current.filter((_, lineIndex) => lineIndex !== index))}><i className="bx bx-trash" /></button></div>)}</div><button type="button" className="btn btn-sm btn-outline-primary align-self-start" onClick={() => setLines((current) => [...current, { account_code: '', debit: '', credit: '' }])}><i className="bx bx-plus me-1" /> Add line</button><div className={`accounting-balance-check${Math.round((debitTotal - creditTotal) * 100) === 0 ? ' is-balanced' : ''}`}><span>Debits <strong>{formatMoney(debitTotal)}</strong></span><span>Credits <strong>{formatMoney(creditTotal)}</strong></span><strong>{Math.round((debitTotal - creditTotal) * 100) === 0 ? 'Balanced' : 'Out of balance'}</strong></div></div></div><div className="inventory-modal-footer"><button type="button" className="btn btn-outline-secondary" onClick={() => setModalOpen(false)}>Cancel</button><button type="submit" className="btn btn-primary" disabled={saving || debitTotal <= 0 || Math.round((debitTotal - creditTotal) * 100) !== 0}>{saving ? 'Posting…' : 'Post adjustment'}</button></div></form></section></div>}
     </section>

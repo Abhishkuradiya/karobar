@@ -176,7 +176,89 @@
 }
 
 .accounting-activity-toolbar {
+  align-items: flex-start;
+}
+
+.data-card-toolbar.journal-entry-toolbar {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: 14px;
+}
+
+.journal-entry-toolbar > div:first-child {
+  width: 100%;
+}
+
+.journal-entry-toolbar > div:last-child {
+  width: 100%;
+  padding-top: 2px;
+}
+
+.data-card-toolbar.journal-entry-toolbar > div:last-child {
+  width: 100%;
+}
+
+.accounting-activity-toolbar > div:last-child {
+  display: grid;
+  grid-template-columns: minmax(210px, 1.35fr) repeat(2, minmax(110px, 0.7fr)) minmax(170px, 1fr);
+  align-items: end;
+  gap: 10px;
+  width: min(100%, 760px);
+}
+
+.accounting-activity-toolbar .search-form {
+  min-width: 0;
+}
+
+.accounting-activity-toolbar .search-form input {
+  width: 100%;
+  min-width: 0;
+}
+
+.journal-live-search {
+  display: flex;
   align-items: center;
+  gap: 8px;
+  min-width: 0;
+  height: 36px;
+  padding: 0 11px;
+  border: 1px solid #e1e2ee;
+  border-radius: 9px;
+  background: #fff;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.journal-live-search:focus-within {
+  border-color: #756be9;
+  box-shadow: 0 0 0 3px rgba(84, 71, 232, .10);
+}
+
+.journal-live-search > i {
+  flex: 0 0 auto;
+  color: #8b8ca2;
+  font-size: 17px;
+}
+
+.journal-live-search input {
+  width: 100%;
+  min-width: 0;
+  height: 30px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #3d3c51;
+  font-size: 12px;
+}
+
+.accounting-activity-toolbar .compact-field {
+  min-width: 0;
+}
+
+.accounting-activity-toolbar .compact-field input,
+.accounting-activity-toolbar .compact-field select {
+  width: 100%;
 }
 
 .accounting-activity-list {
@@ -386,6 +468,40 @@
   gap: 3px;
   color: #657189;
   font-size: 0.75rem;
+}
+
+.accounting-journal-lines-detailed {
+  gap: 6px;
+  min-width: 230px;
+}
+
+.accounting-journal-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 7px;
+  border: 1px solid #edf0f5;
+  border-radius: 6px;
+  background: #fafbfe;
+}
+
+.accounting-journal-line-amounts {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  color: #7e8799;
+  font-size: 0.68rem;
+  white-space: nowrap;
+}
+
+.accounting-journal-line-amounts small {
+  font-size: inherit;
+}
+
+.accounting-journal-search {
+  margin: 0 0 14px;
+  max-width: 420px;
 }
 
 .accounting-journal-form .inventory-field input,
@@ -663,6 +779,15 @@
 
   .accounting-date-filters {
     width: 100%;
+  }
+
+  .accounting-activity-toolbar > div:last-child {
+    grid-template-columns: repeat(2, minmax(130px, 1fr));
+    width: 100%;
+  }
+
+  .accounting-activity-toolbar .search-form {
+    grid-column: 1 / -1;
   }
 
   .accounting-date-filters .compact-field {

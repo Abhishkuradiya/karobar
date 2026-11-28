@@ -38,6 +38,7 @@ class PurchaseApiTest extends TestCase
             ->assertJsonPath('supplier_amount', '224.20')
             ->assertJsonPath('amount_paid', '224.20')
             ->assertJsonPath('balance_due', '0.00')
+            ->assertJsonPath('purchase_number', 'PUR0001')
             ->json();
 
         $entryId = $purchase['current_journal_entry_id'];
@@ -131,6 +132,19 @@ class PurchaseApiTest extends TestCase
         ]);
 
         $currentEntryId = $updated['current_journal_entry_id'];
+        $this->assertDatabaseHas('journal_lines', [
+            'journal_entry_id' => $currentEntryId,
+            'account_code' => 'purchase_expense',
+            'debit' => '200.00',
+        ]);
+        $this->assertSame(
+            0,
+            JournalEntry::query()->findOrFail($currentEntryId)->lines()
+                ->selectRaw('SUM(debit) as debit_total, SUM(credit) as credit_total')
+                ->get()
+                ->filter(fn ($totals) => round((float) $totals->debit_total, 2) !== round((float) $totals->credit_total, 2))
+                ->count()
+        );
         $this->deleteJson("/api/purchases/{$purchase['id']}")->assertNoContent();
         $this->assertSoftDeleted('purchases', ['id' => $purchase['id']]);
         $this->assertDatabaseHas('journal_entries', [

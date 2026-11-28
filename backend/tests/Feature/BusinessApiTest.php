@@ -156,6 +156,20 @@ class BusinessApiTest extends TestCase
         $this->assertNotSame($firstBusiness['id'], $otherBusiness->id);
     }
 
+    public function test_dashboard_sales_comparison_returns_numeric_percentage_for_new_sales(): void
+    {
+        $this->authenticatedUser();
+        $this->postJson('/api/businesses', $this->businessPayload())->assertCreated();
+
+        $this->postJson('/api/sales', $this->salePayload(null))->assertCreated();
+
+        $this->getJson('/api/dashboard/today-net-sales')
+            ->assertOk()
+            ->assertJsonPath('comparison', 'new_sales')
+            ->assertJsonPath('difference_percent', 100)
+            ->assertJsonPath('comparison_label', '↑ 100.00%');
+    }
+
     private function authenticatedUser(): User
     {
         $user = User::factory()->create([
@@ -181,7 +195,7 @@ class BusinessApiTest extends TestCase
         ], $overrides);
     }
 
-    private function salePayload(int $customerId): array
+    private function salePayload(?int $customerId): array
     {
         return [
             'customer_id' => $customerId,

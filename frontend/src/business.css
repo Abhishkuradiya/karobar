@@ -668,6 +668,7 @@ textarea {
 }
 
 .summary-card .comparison-increase { color: #16845d; }
+.summary-card .comparison-new_sales { color: #16845d; }
 .summary-card .comparison-decrease { color: #c24d4d; }
 
 .summary-footnote {

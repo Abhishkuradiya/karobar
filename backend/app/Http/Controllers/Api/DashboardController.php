@@ -67,20 +67,26 @@ class DashboardController extends Controller
         $sales = Sale::query()->where('user_id', $request->user()->id)->where('business_id', $businessId);
         $todayTotal = (float) (clone $sales)->whereDate('sale_date', $today)->sum('total');
         $yesterdayTotal = (float) (clone $sales)->whereDate('sale_date', $yesterday)->sum('total');
-        $change = $yesterdayTotal == 0.0 ? null : round(abs((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100), 2);
+        // A zero baseline has no mathematical percentage denominator. For the
+        // dashboard comparison, treat new sales as a full 100% increase so the
+        // card always communicates a numeric movement instead of showing a
+        // non-comparable text state.
+        $change = $yesterdayTotal == 0.0
+            ? ($todayTotal > 0 ? 100.0 : 0.0)
+            : round(abs((($todayTotal - $yesterdayTotal) / $yesterdayTotal) * 100), 2);
         $comparison = $yesterdayTotal == 0.0
             ? ($todayTotal > 0 ? 'new_sales' : 'no_change')
             : ($todayTotal > $yesterdayTotal ? 'increase' : ($todayTotal < $yesterdayTotal ? 'decrease' : 'no_change'));
         $comparisonLabel = match ($comparison) {
             'increase' => '↑ '.number_format($change, 2).'%',
             'decrease' => '↓ '.number_format($change, 2).'%',
-            'new_sales' => '↑ New',
-            default => '— 0%',
+            'new_sales' => '↑ '.number_format($change, 2).'%',
+            default => '0%',
         };
         $comparisonDetail = match ($comparison) {
             'increase' => 'Sales increased by '.number_format($change, 2).'% vs yesterday',
             'decrease' => 'Sales decreased by '.number_format($change, 2).'% vs yesterday',
-            'new_sales' => 'New sales today',
+            'new_sales' => 'Sales increased by '.number_format($change, 2).'% vs yesterday',
             default => 'No change from yesterday',
         };
 

@@ -113,11 +113,7 @@ class PurchaseController extends Controller
             ]);
 
             $purchase->update([
-                'purchase_number' => sprintf(
-                    'PUR-%s-%06d',
-                    Carbon::parse($purchase->purchase_date)->format('Ymd'),
-                    $purchase->id
-                ),
+                'purchase_number' => 'PUR'.str_pad((string) $purchase->id, 4, '0', STR_PAD_LEFT),
             ]);
             $purchase->items()->createMany($calculated['items']);
             app(InventoryService::class)->receivePurchase($purchase);

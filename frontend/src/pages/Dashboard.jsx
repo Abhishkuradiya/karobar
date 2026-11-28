@@ -57,7 +57,7 @@ function DashboardContent() {
       <div className="summary-grid dashboard-summary-grid">
         <article className="summary-card">
           <span className="summary-icon summary-icon-blue"><i className="bx bx-line-chart" /></span>
-          <div><small>Net sales vs yesterday</small><strong className={`comparison-value comparison-${netSales?.comparison || 'no_change'}`} title={netSales?.comparison_detail || 'No change from yesterday'}>{loading ? 'Loading' : netSales?.comparison_label || '— 0%'}</strong></div>
+          <div><small>Net sales vs yesterday</small><strong className={`comparison-value comparison-${netSales?.comparison || 'no_change'}`} title={netSales?.comparison_detail || 'No change from yesterday'}>{loading ? 'Loading' : netSales?.comparison_label || '0%'}</strong></div>
           <span className="summary-footnote">Daily sales comparison</span>
         </article>
         <article className="summary-card">

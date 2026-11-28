@@ -164,6 +164,19 @@ class SaleApiTest extends TestCase
         ]);
 
         $currentEntryId = $updated['current_journal_entry_id'];
+        $this->assertDatabaseHas('journal_lines', [
+            'journal_entry_id' => $currentEntryId,
+            'account_code' => 'cash',
+            'debit' => '200.00',
+        ]);
+        $this->assertSame(
+            0,
+            JournalEntry::query()->findOrFail($currentEntryId)->lines()
+                ->selectRaw('SUM(debit) as debit_total, SUM(credit) as credit_total')
+                ->get()
+                ->filter(fn ($totals) => round((float) $totals->debit_total, 2) !== round((float) $totals->credit_total, 2))
+                ->count()
+        );
         $this->deleteJson("/api/sales/{$sale['id']}")->assertNoContent();
         $this->assertSoftDeleted('sales', ['id' => $sale['id']]);
         $this->assertDatabaseHas('journal_entries', [
